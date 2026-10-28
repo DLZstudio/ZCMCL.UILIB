@@ -1,0 +1,27 @@
+# 构建产物
+bin/
+obj/
+.build/
+dist/
+publish/
+*.user
+*.suo
+*.cache
+
+# 编辑器
+.vs/
+.vscode/
+.idea/
+
+# NuGet
+packages/
+*.nupkg
+*.snupkg
+
+# 系统
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# 日志
+*.log

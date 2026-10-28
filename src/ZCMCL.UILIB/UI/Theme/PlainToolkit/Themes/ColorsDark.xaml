@@ -1,0 +1,95 @@
+<!--
+    SPDX-License-Identifier: MIT
+    Copyright (c) 2026 PCL Community
+    源自 PCL-Community/PlainToolkit.UI（MIT）
+-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+        Dark Mode Palette — PCL-CE SkyBlue (Hue≈235°) OKLCH approximation.
+        Lightness inverted per ToneProfileConfig.DefaultDark:
+          L1=0.96 L2=0.75 L3=0.60 L4=0.65 L5=0.45 L6=0.25 L7=0.225 L8=0.20
+          LBackground=0.30 LWhite=0.275 LForeground=1.0
+        Gray: L1=96 L2=75 L3=60 L4=65 L5=45 L6=25 L7=22 L8=20
+    -->
+
+    <!-- ========== Chromatic (Blue family) ========== -->
+    <SolidColorBrush x:Key="ColorBrush1">#dce4f0</SolidColorBrush>
+    <SolidColorBrush x:Key="ColorBrush2">#6ba3f5</SolidColorBrush>
+    <SolidColorBrush x:Key="ColorBrush3">#3d82e8</SolidColorBrush>
+    <SolidColorBrush x:Key="ColorBrush4">#5a92d0</SolidColorBrush>
+    <SolidColorBrush x:Key="ColorBrush5">#3e5070</SolidColorBrush>
+    <SolidColorBrush x:Key="ColorBrush6">#2a3244</SolidColorBrush>
+    <SolidColorBrush x:Key="ColorBrush7">#252d3c</SolidColorBrush>
+    <SolidColorBrush x:Key="ColorBrush8">#202834</SolidColorBrush>
+    <SolidColorBrush x:Key="ColorBrushBg0">#3e5070</SolidColorBrush>
+    <SolidColorBrush x:Key="ColorBrushBg1">#bb252d3c</SolidColorBrush>
+
+    <!-- Color Objects -->
+    <Color x:Key="ColorObject1">#dce4f0</Color>
+    <Color x:Key="ColorObject2">#6ba3f5</Color>
+    <Color x:Key="ColorObject3">#3d82e8</Color>
+    <Color x:Key="ColorObject4">#5a92d0</Color>
+    <Color x:Key="ColorObject5">#3e5070</Color>
+    <Color x:Key="ColorObject6">#2a3244</Color>
+    <Color x:Key="ColorObject7">#252d3c</Color>
+    <Color x:Key="ColorObject8">#202834</Color>
+    <Color x:Key="ColorObjectBg0">#3e5070</Color>
+    <Color x:Key="ColorObjectBg1">#252d3c</Color>
+    <Color x:Key="ColorObjectMsgBoxShadow">#000000</Color>
+
+    <!-- ========== Gray Scale ========== -->
+    <SolidColorBrush x:Key="ColorBrushGray1">#ededed</SolidColorBrush>
+    <SolidColorBrush x:Key="ColorBrushGray2">#b5b5b5</SolidColorBrush>
+    <SolidColorBrush x:Key="ColorBrushGray3">#878787</SolidColorBrush>
+    <SolidColorBrush x:Key="ColorBrushGray4">#949494</SolidColorBrush>
+    <SolidColorBrush x:Key="ColorBrushGray5">#636363</SolidColorBrush>
+    <SolidColorBrush x:Key="ColorBrushGray6">#363636</SolidColorBrush>
+    <SolidColorBrush x:Key="ColorBrushGray7">#2e2e2e</SolidColorBrush>
+    <SolidColorBrush x:Key="ColorBrushGray8">#282828</SolidColorBrush>
+
+    <!-- Gray Color Objects -->
+    <Color x:Key="ColorObjectGray1">#ededed</Color>
+    <Color x:Key="ColorObjectGray2">#b5b5b5</Color>
+    <Color x:Key="ColorObjectGray3">#878787</Color>
+    <Color x:Key="ColorObjectGray4">#949494</Color>
+    <Color x:Key="ColorObjectGray5">#636363</Color>
+    <Color x:Key="ColorObjectGray6">#363636</Color>
+    <Color x:Key="ColorObjectGray7">#2e2e2e</Color>
+    <Color x:Key="ColorObjectGray8">#282828</Color>
+
+    <!-- ========== Semantic ========== -->
+    <SolidColorBrush x:Key="ColorBrushRedBack">#80402020</SolidColorBrush>
+    <SolidColorBrush x:Key="ColorBrushRedLight">#e85050</SolidColorBrush>
+    <SolidColorBrush x:Key="ColorBrushRedDark">#d03030</SolidColorBrush>
+    <SolidColorBrush x:Key="ColorBrushHalfWhite" Color="#55dce4f0" />
+    <SolidColorBrush x:Key="ColorBrushSemiWhite" Color="#bbdce4f0" />
+    <SolidColorBrush x:Key="ColorBrushWhite" Color="#252d3c" />
+    <SolidColorBrush x:Key="ColorBrushTransparent" Color="#00202834" />
+    <SolidColorBrush x:Key="ColorBrushSemiTransparent">#01202834</SolidColorBrush>
+    <SolidColorBrush x:Key="ColorBrushTransparentBackground" Color="#d2202834" />
+    <SolidColorBrush x:Key="ColorBrushBackground">#202834</SolidColorBrush>
+    <SolidColorBrush x:Key="ColorBrushToolTip">#e5202834</SolidColorBrush>
+    <SolidColorBrush x:Key="ColorBrushMemory">#ffffff</SolidColorBrush>
+    <SolidColorBrush x:Key="ColorBrushFatal">#e85050</SolidColorBrush>
+    <SolidColorBrush x:Key="ColorBrushError">#e85050</SolidColorBrush>
+    <SolidColorBrush x:Key="ColorBrushWarn">#e8a830</SolidColorBrush>
+    <SolidColorBrush x:Key="ColorBrushInfoDark">#000000</SolidColorBrush>
+    <SolidColorBrush x:Key="ColorBrushInfo">#dce4f0</SolidColorBrush>
+    <SolidColorBrush x:Key="ColorBrushDebug">#878787</SolidColorBrush>
+
+    <!-- ========== State-specific (dark mode) ========== -->
+    <!-- Button hover/pressed -->
+    <SolidColorBrush x:Key="ColorBrushButtonHoverBorder">#6ba3f5</SolidColorBrush>
+    <SolidColorBrush x:Key="ColorBrushButtonHoverBg">#2a3244</SolidColorBrush>
+    <SolidColorBrush x:Key="ColorBrushButtonPressedBorder">#3d82e8</SolidColorBrush>
+    <SolidColorBrush x:Key="ColorBrushButtonPressedBg">#3e5070</SolidColorBrush>
+
+    <!-- Input hover/focus -->
+    <SolidColorBrush x:Key="ColorBrushInputHoverBorder">#6ba3f5</SolidColorBrush>
+    <SolidColorBrush x:Key="ColorBrushInputHoverBg">#2a3244</SolidColorBrush>
+    <SolidColorBrush x:Key="ColorBrushInputFocusBorder">#3d82e8</SolidColorBrush>
+    <SolidColorBrush x:Key="ColorBrushInputFocusBg">#2a3244</SolidColorBrush>
+
+</ResourceDictionary>

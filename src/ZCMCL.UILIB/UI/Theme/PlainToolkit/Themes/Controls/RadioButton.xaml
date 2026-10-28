@@ -1,0 +1,105 @@
+<!--
+    SPDX-License-Identifier: MIT
+    Copyright (c) 2026 PCL Community
+    源自 PCL-Community/PlainToolkit.UI（MIT）
+    Modified by ZCMCL Contributors (2026): 补上缺失的 Content → Text 绑定
+-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- RADIOBUTTON — PCL-CE MyRadioBox style, dot scales from center -->
+    <Style TargetType="RadioButton" x:Key="PlainRadioButton">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="SnapsToDevicePixels" Value="False" />
+        <Setter Property="UseLayoutRounding" Value="False" />
+        <Setter Property="FontSize" Value="13" />
+
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrush1}" />
+        <Setter Property="MinWidth" Value="20" />
+        <Setter Property="MinHeight" Value="20" />
+        <Setter Property="Background" Value="{DynamicResource ColorBrushTransparent}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RadioButton">
+                    <Grid Background="{TemplateBinding Background}"
+                          SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}">
+                        <Border x:Name="HoverBg" Background="{DynamicResource ColorBrush8}"
+                                Opacity="0" IsHitTestVisible="False" />
+                        <!--
+                            ZCMCL 修复：上游此处漏了 Text 绑定，导致单选按钮只显示圆圈、
+                            文字永不出现。补 Text="{TemplateBinding Content}"。
+                        -->
+                        <TextBlock x:Name="LabText" IsHitTestVisible="False" FontSize="{TemplateBinding FontSize}"
+                                   Padding="0" Margin="26,0,0,0"
+                                   Text="{TemplateBinding Content}"
+                                   Foreground="{TemplateBinding Foreground}"
+                                   HorizontalAlignment="Left" VerticalAlignment="Center" />
+                        <Ellipse x:Name="ShapeBorder" IsHitTestVisible="False"
+                                 StrokeThickness="1.1" HorizontalAlignment="Left" VerticalAlignment="Center"
+                                 Width="18" Height="18"
+                                 Stroke="{TemplateBinding Foreground}" Margin="1,0,0,0"
+                                 Fill="{TemplateBinding Background}" />
+                        <Ellipse x:Name="ShapeDot" IsHitTestVisible="False"
+                                 HorizontalAlignment="Left" VerticalAlignment="Center"
+                                 Fill="{Binding Stroke, ElementName=ShapeBorder}"
+                                 Width="10" Height="10" Margin="5,0,0,0" StrokeThickness="0"
+                                 RenderTransformOrigin="0.5,0.5">
+                            <Ellipse.RenderTransform>
+                                <ScaleTransform ScaleX="0" ScaleY="0" />
+                            </Ellipse.RenderTransform>
+                        </Ellipse>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="HoverBg"
+                                            Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.1" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="HoverBg"
+                                            Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.12" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="ShapeDot"
+                                            Storyboard.TargetProperty="(Ellipse.RenderTransform).(ScaleTransform.ScaleX)"
+                                            To="1" Duration="0:0:0.15" />
+                                        <DoubleAnimation Storyboard.TargetName="ShapeDot"
+                                            Storyboard.TargetProperty="(Ellipse.RenderTransform).(ScaleTransform.ScaleY)"
+                                            To="1" Duration="0:0:0.15" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="ShapeDot"
+                                            Storyboard.TargetProperty="(Ellipse.RenderTransform).(ScaleTransform.ScaleX)"
+                                            To="0" Duration="0:0:0.15" />
+                                        <DoubleAnimation Storyboard.TargetName="ShapeDot"
+                                            Storyboard.TargetProperty="(Ellipse.RenderTransform).(ScaleTransform.ScaleY)"
+                                            To="0" Duration="0:0:0.15" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style TargetType="RadioButton" BasedOn="{StaticResource PlainRadioButton}" />
+
+</ResourceDictionary>

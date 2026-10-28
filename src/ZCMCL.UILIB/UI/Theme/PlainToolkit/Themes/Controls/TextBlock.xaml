@@ -1,0 +1,31 @@
+<!--
+    SPDX-License-Identifier: MIT
+    Copyright (c) 2026 PCL Community
+    源自 PCL-Community/PlainToolkit.UI（MIT）
+    Modified by ZCMCL Contributors (2026): 移除隐式 TextBlock 样式（会覆盖宿主应用文字样式与换行）
+-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+        ZCMCL 修改（相对上游 PCL-Community/PlainToolkit.UI）：
+        已移除本文件末尾的隐式样式
+            <Style TargetType="TextBlock" BasedOn="{StaticResource PlainTextBlock}" />
+        原因：该隐式样式带 OverridesDefaultStyle="True"、FontSize=13、
+        Foreground=ColorBrush1、TextTrimming="CharacterEllipsis"，
+        会作用到窗口内所有 TextBlock。后果是未显式指定 Foreground 的文字被
+        强制成单一深灰、丧失层级，且 CharacterEllipsis 在受限宽度下把文字
+        截断成空，表现为左侧导航「社区资源」下的整组条目消失。
+
+        显式样式 PlainTextBlock 保留，需要 PCL 统一文字外观时显式引用：
+            Style="{StaticResource PlainTextBlock}"
+    -->
+
+    <Style TargetType="TextBlock" x:Key="PlainTextBlock">
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrush1}" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+
+</ResourceDictionary>

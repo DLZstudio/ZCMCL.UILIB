@@ -1,0 +1,57 @@
+<!--
+    SPDX-License-Identifier: MIT
+    Copyright (c) 2026 PCL Community
+    源自 PCL-Community/PlainToolkit.UI（MIT）
+-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- GROUPBOX — Bordered container with clean header label -->
+    <Style TargetType="GroupBox" x:Key="PlainGroupBox">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrush1}" />
+        <Setter Property="Background" Value="{DynamicResource ColorBrushTransparent}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource ColorBrushGray5}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="GroupBox">
+                    <Grid Margin="0,8,0,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <!-- Border wraps header + content -->
+                        <Border Grid.Row="0" Grid.RowSpan="2"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="3"
+                                Background="{TemplateBinding Background}" />
+
+                        <!-- Header label with background cutout effect -->
+                        <Border Grid.Row="0"
+                                Background="{TemplateBinding Background}"
+                                Padding="8,0" Margin="12,-10,0,0"
+                                HorizontalAlignment="Left">
+                            <ContentPresenter x:Name="Header"
+                                              ContentSource="Header"
+                                              SnapsToDevicePixels="True"
+                                              TextElement.Foreground="{TemplateBinding Foreground}"
+                                              TextElement.FontSize="{TemplateBinding FontSize}"
+                                              TextElement.FontWeight="SemiBold" />
+                        </Border>
+
+                        <!-- Content -->
+                        <Border Grid.Row="1" Padding="12,6,12,12">
+                            <ContentPresenter SnapsToDevicePixels="True" />
+                        </Border>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style TargetType="GroupBox" BasedOn="{StaticResource PlainGroupBox}" />
+
+</ResourceDictionary>

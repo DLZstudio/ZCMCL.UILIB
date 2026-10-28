@@ -1,0 +1,52 @@
+<!--
+    SPDX-License-Identifier: MIT
+    Copyright (c) 2026 PCL Community
+    源自 PCL-Community/PlainToolkit.UI（MIT）
+-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- STATUSBAR — Bottom bar, minimalist, theme-aware -->
+    <Style TargetType="StatusBar" x:Key="PlainStatusBar">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Background" Value="{DynamicResource ColorBrushBackground}" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrushGray2}" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="StatusBar">
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{DynamicResource ColorBrushGray6}"
+                            BorderThickness="0,1,0,0"
+                            Padding="10,3">
+                        <ItemsPresenter SnapsToDevicePixels="True" />
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- STATUSBARITEM — Inline separator-aware item -->
+    <Style TargetType="StatusBarItem" x:Key="PlainStatusBarItem">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrushGray2}" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="StatusBarItem">
+                    <Border Background="{TemplateBinding Background}"
+                            Padding="6,1">
+                        <ContentPresenter SnapsToDevicePixels="True" />
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="StatusBar" BasedOn="{StaticResource PlainStatusBar}" />
+    <Style TargetType="StatusBarItem" BasedOn="{StaticResource PlainStatusBarItem}" />
+
+</ResourceDictionary>

@@ -1,0 +1,78 @@
+# ZCMCL.UILIB 的许可说明
+
+本项目是**混合许可**（multi-licensed）项目。不同部分的许可取决于其来源，
+以各文件头部的 SPDX 标识为准。
+
+```
+SPDX-License-Identifier: Apache-2.0 AND MIT
+```
+
+## 一、许可分区
+
+| 路径 | 许可 | 版权 |
+|---|---|---|
+| `src/ZCMCL.UILIB/**`（除下两行的例外） | **Apache License 2.0** | Copyright 2025 PCL Community |
+| `src/ZCMCL.UILIB/UI/Theme/PlainToolkit/**` | **MIT** | Copyright (c) 2026 PCL Community |
+| `src/ZCMCL.UILIB/App/Telemetry/TelemetryService.cs` | **MIT** | Copyright 2026 ZCMCL Contributors |
+| `src/ZCMCL.UILIB.SourceGenerators/**` | **Apache License 2.0** | Copyright 2025 PCL Community |
+
+两份许可全文分别见：
+
+- `LICENSE-APACHE-2.0.txt`
+- `LICENSE-MIT.txt`
+
+## 二、来源说明
+
+### 1. Apache-2.0 部分：衍生自 PCL.Core
+
+`src/ZCMCL.UILIB` 与 `src/ZCMCL.UILIB.SourceGenerators` 的主体衍生自
+[PCL-Community/PCL-CE](https://github.com/PCL-Community/PCL-CE) 的 `PCL.Core/`
+与 `PCL.Core.SourceGenerators/` 目录，依据其 Apache License 2.0 条款使用。
+
+上游仓库的许可结构中，仅 `Plain Craft Launcher 2/` 目录为自定义许可；
+本项目的代码全部来自标记为 Apache-2.0 的目录，**未包含**该自定义许可目录下的任何内容。
+
+本项目对这些文件所做的修改包括：
+
+- 命名空间由 `PCL.Core.*` 更名为 `ZCMCL.UILIB.*`（避免与启动器内核的 `core` 概念混淆）
+- 移除启动器业务层（`Minecraft/`、`Link/`、`IO/Download/`、`App/Essentials` 等），
+  这些能力由外部内核通过 IPC 提供
+- 移除遥测上报（Sentry），改为本地日志 + 可选的用户授权遥测预留接口
+- 修复命名空间更名引入的硬编码偏移问题（`SharedExtensions.CorrectConfigTypeName`）
+- 源代码生成器所需的 Roslyn 版本由 5.6.0 降至 5.0.0，以匹配 .NET 10 SDK 内置编译器
+
+按 Apache-2.0 第 4(b) 条，上述修改已在相关文件中标注。
+
+### 2. MIT 部分：PlainToolkit.UI
+
+`UI/Theme/PlainToolkit/` 来自
+[PCL-Community/PlainToolkit.UI](https://github.com/PCL-Community/PlainToolkit.UI)（MIT）。
+
+本项目对其所做的修改：
+
+- `Themes/Generic.xaml`：调换 `Colors.xaml` / `ColorsDark.xaml` 的合并顺序，
+  使浅色成为默认主题（上游把 `ColorsDark.xaml` 放在最后合并，导致深色意外成为默认）
+- `Themes/Controls/TextBlock.xaml`：移除隐式 `TextBlock` 样式（其 `OverridesDefaultStyle`
+  与 `CharacterEllipsis` 会强制覆盖宿主应用自身的文字样式与换行）
+- `Themes/Controls/RadioButton.xaml`：补上缺失的 `Text="{TemplateBinding Content}"`
+  （上游该模板未绑定 Content，导致单选按钮只显示圆圈、不显示文字）
+- `Themes/Controls/CheckBox.xaml`：同上，补上 Content 绑定
+- `Themes/Controls/Card.xaml` 等：圆角由 6 调整为 10，按键由 3 调整为 5
+- `Themes/PaletteOnly.xaml`：新增文件（仅合并调色板、不引入隐式控件样式的入口）
+
+### 3. MIT 部分：本项目原创
+
+`App/Telemetry/TelemetryService.cs` 为本项目原创代码，以 MIT 发布。
+
+## 三、第三方组件
+
+本项目通过 NuGet 引用的第三方组件及来源说明，详见 `THIRD-PARTY.md` 与 `NOTICE`。
+
+## 四、为什么不是纯 MIT
+
+上游 `PCL.Core` 以 Apache-2.0 授权，其条款要求衍生作品在分发时保留许可声明。
+因此**不能**将这部分代码单方面改为 MIT 并移除 Apache 声明。
+
+本项目采取的做法是分区保留各自许可：使用者可以按需选择 ——
+仅使用 `UI/Theme/PlainToolkit/` 时只需遵守 MIT；使用其余部分时需同时遵守 Apache-2.0。
+两者均为宽松许可，允许商业使用、修改与再分发。

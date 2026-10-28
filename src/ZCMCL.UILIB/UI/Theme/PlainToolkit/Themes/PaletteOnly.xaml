@@ -1,0 +1,31 @@
+<!--
+    SPDX-License-Identifier: MIT
+    Copyright (c) 2026 PCL Community
+    源自 PCL-Community/PlainToolkit.UI（MIT）
+    Modified by ZCMCL Contributors (2026): 新增：仅合并调色板、不引入隐式控件样式的入口
+-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!--
+        PlainToolkit.UI 的「调色板子集」入口（不含任何控件样式）。
+
+        为什么不用 Themes/Generic.xaml：
+          Generic.xaml 会加载全部 26 个控件字典，而其中多数都带有一条隐式样式
+          （形如 <Style TargetType="TextBlock" BasedOn="{StaticResource PlainTextBlock}" />）。
+          隐式样式会作用到窗口内所有同类型控件，覆盖 Zcmcl.Ui 自己设置的
+          Foreground / FontSize，表现为左栏导航文字变浅、页签灰度异常。
+
+        本字典只合并两个调色板：
+          - Colors.xaml     浅色（PCL-CE SkyBlue 调色）
+          - ColorsDark.xaml 深色
+        两者始终同时存在，由 ThemeHelper.SetTheme(bool) 调整顺序决定哪个生效。
+
+        控件样式请在需要时按显式 Key 引用，例如：
+          Style="{StaticResource PlainCard}"  /  "{StaticResource PlainButton}"
+        这样既能拿到 PCL-CE 的真实观感，又不会污染我们自己的样式体系。
+    -->
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="/ZCMCL.UILIB;component/UI/Theme/PlainToolkit/Themes/Colors.xaml" />
+        <ResourceDictionary Source="/ZCMCL.UILIB;component/UI/Theme/PlainToolkit/Themes/ColorsDark.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+</ResourceDictionary>

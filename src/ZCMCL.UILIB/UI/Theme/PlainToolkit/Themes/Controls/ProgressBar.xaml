@@ -1,0 +1,74 @@
+<!--
+    SPDX-License-Identifier: MIT
+    Copyright (c) 2026 PCL Community
+    源自 PCL-Community/PlainToolkit.UI（MIT）
+-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- PROGRESSBAR — Modern minimalist, theme-aware track + indicator -->
+    <Style TargetType="ProgressBar" x:Key="PlainProgressBar">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Height" Value="6" />
+        <Setter Property="MinHeight" Value="4" />
+        <Setter Property="Background" Value="{DynamicResource ColorBrushGray6}" />
+        <Setter Property="Foreground" Value="{DynamicResource ColorBrush3}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ProgressBar">
+                    <Border x:Name="TrackBorder"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="3"
+                            BorderThickness="0"
+                            ClipToBounds="True">
+                        <Grid>
+                            <!-- Determinate indicator -->
+                            <Border x:Name="PART_Indicator"
+                                    Background="{TemplateBinding Foreground}"
+                                    CornerRadius="3"
+                                    HorizontalAlignment="Left" />
+                            <!-- Indeterminate sliding bar -->
+                            <Border x:Name="IndeterminateBar"
+                                    Background="{TemplateBinding Foreground}"
+                                    CornerRadius="3"
+                                    Width="60"
+                                    HorizontalAlignment="Left"
+                                    Opacity="0"
+                                    RenderTransformOrigin="0,0.5">
+                                <Border.RenderTransform>
+                                    <TranslateTransform X="0" />
+                                </Border.RenderTransform>
+                            </Border>
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsIndeterminate" Value="True">
+                            <Setter TargetName="PART_Indicator" Property="Opacity" Value="0" />
+                            <Setter TargetName="IndeterminateBar" Property="Opacity" Value="0.8" />
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                        <DoubleAnimation Storyboard.TargetName="IndeterminateBar"
+                                            Storyboard.TargetProperty="(Border.RenderTransform).(TranslateTransform.X)"
+                                            From="-60" To="500" Duration="0:0:1.2" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="IndeterminateBar"
+                                            Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.1" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style TargetType="ProgressBar" BasedOn="{StaticResource PlainProgressBar}" />
+
+</ResourceDictionary>

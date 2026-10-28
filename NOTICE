@@ -1,0 +1,31 @@
+ZCMCL.UILIB
+Copyright 2025 PCL Community（Apache-2.0 部分）
+Copyright 2026 PCL Community（PlainToolkit.UI 部分，MIT）
+Copyright 2026 ZCMCL Contributors（原创部分，MIT）
+
+---
+
+本产品包含以下开源组件 / This product includes the following open source components:
+
+1. PCL.Core
+   Copyright 2025 PCL Community
+   Licensed under the Apache License, Version 2.0
+   https://github.com/PCL-Community/PCL-CE
+
+   本项目代码取自该仓库的 `PCL.Core/` 与 `PCL.Core.SourceGenerators/` 目录。
+   该仓库的 `Plain Craft Launcher 2/` 目录使用另一套自定义许可，
+   本项目**不包含**该目录下的任何代码。
+   因此随附的 Apache-2.0 许可文本中「SPECIAL DIRECTORY: Plain Craft Launcher 2/」
+   一段对本项目不适用，仅为保持许可原文完整而保留。
+
+2. PlainToolkit.UI
+   Copyright (c) 2026 PCL Community
+   Licensed under the MIT License
+   https://github.com/PCL-Community/PlainToolkit.UI
+
+   位于 `src/ZCMCL.UILIB/UI/Theme/PlainToolkit/`。
+   本项目的修改已在 `LICENSE` 与各文件注释中标注。
+
+---
+
+NuGet 第三方依赖清单见 THIRD-PARTY.md。

@@ -1,0 +1,51 @@
+<!--
+    SPDX-License-Identifier: MIT
+    Copyright (c) 2026 PCL Community
+    源自 PCL-Community/PlainToolkit.UI（MIT）
+    Modified by ZCMCL Contributors (2026): 调换 Colors/ColorsDark 合并顺序使浅色为默认；移除末尾重复的 ColorsDark
+-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ResourceDictionary.MergedDictionaries>
+        <!--
+            ZCMCL 修改：调换 Colors / ColorsDark 的默认顺序。
+            上游把 ColorsDark.xaml 放在最后，而 WPF 对 MergedDictionaries 是
+            「后合并者优先」，导致默认生效的其实是深色调色板 —— 于是浅色界面里
+            输入框边框取到 ColorBrushBg0=#3e5070（深蓝灰）、文字取到 #dce4f0，
+            看起来就是一圈突兀的黑边。
+            这里改为深色在前、浅色在后，使默认呈现浅色主题（PCL-CE 的浅色）。
+            运行时如需深色，调用 ThemeHelper.SetTheme(false) 再交换回来。
+        -->
+        <ResourceDictionary Source="ColorsDark.xaml" />
+        <ResourceDictionary Source="Colors.xaml" />
+        <ResourceDictionary Source="Controls/Window.xaml" />
+        <ResourceDictionary Source="Controls/Label.xaml" />
+        <ResourceDictionary Source="Controls/TextBlock.xaml" />
+        <ResourceDictionary Source="Controls/ToolTip.xaml" />
+        <ResourceDictionary Source="Controls/Button.xaml" />
+        <ResourceDictionary Source="Controls/CheckBox.xaml" />
+        <ResourceDictionary Source="Controls/RadioButton.xaml" />
+        <ResourceDictionary Source="Controls/TextBox.xaml" />
+        <ResourceDictionary Source="Controls/ComboBox.xaml" />
+        <ResourceDictionary Source="Controls/ScrollBar.xaml" />
+        <ResourceDictionary Source="Controls/ScrollViewer.xaml" />
+        <ResourceDictionary Source="Controls/Slider.xaml" />
+        <ResourceDictionary Source="Controls/ContextMenu.xaml" />
+        <ResourceDictionary Source="Controls/ToggleButton.xaml" />
+        <ResourceDictionary Source="Controls/MenuItem.xaml" />
+        <ResourceDictionary Source="Controls/ListBox.xaml" />
+        <ResourceDictionary Source="Controls/ListView.xaml" />
+        <ResourceDictionary Source="Controls/DataGrid.xaml" />
+        <ResourceDictionary Source="Controls/TabControl.xaml" />
+        <ResourceDictionary Source="Controls/Card.xaml" />
+        <ResourceDictionary Source="Controls/ProgressBar.xaml" />
+        <ResourceDictionary Source="Controls/Expander.xaml" />
+        <ResourceDictionary Source="Controls/TreeView.xaml" />
+        <ResourceDictionary Source="Controls/GroupBox.xaml" />
+        <ResourceDictionary Source="Controls/Menu.xaml" />
+        <ResourceDictionary Source="Controls/StatusBar.xaml" />
+        <!-- 调色板已在开头合并（ColorsDark 在前、Colors 在后 = 浅色生效），此处不再重复。 -->
+    </ResourceDictionary.MergedDictionaries>
+
+</ResourceDictionary>
