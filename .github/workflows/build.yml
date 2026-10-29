@@ -23,8 +23,17 @@ jobs:
       - name: Restore
         run: dotnet restore ZCMCL.UILIB.slnx
 
+      # 用 csproj 直接构建，而不是 slnx：
+      # 有反馈报告在某些 SDK / 干净检出环境下 `dotnet build *.slnx` 会无输出失败
+      # （只构建了 SourceGenerators 就报"生成失败 0 错误"）。slnx 保留给 IDE 使用，
+      # CI 走 csproj 以规避该不确定性（SourceGenerators 会经 ProjectReference 自动构建）。
       - name: Build (Release, warnings as errors)
-        run: dotnet build ZCMCL.UILIB.slnx -c Release --no-restore -warnaserror
+        run: dotnet build src/ZCMCL.UILIB/ZCMCL.UILIB.csproj -c Release --no-restore -warnaserror
+
+      # 兜底：用 slnx 再跑一次，若失败不影响主流程（仅提示）
+      - name: Build solution (informational)
+        continue-on-error: true
+        run: dotnet build ZCMCL.UILIB.slnx -c Release -warnaserror
 
       # 校验每个源文件都带 SPDX 许可标识（混合许可项目的合规底线）
       - name: Check SPDX headers

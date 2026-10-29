@@ -24,6 +24,27 @@ public static class ThemeHelper
         _genericDict is not null && _colorsLight is not null && _colorsDark is not null;
 
     /// <summary>
+    /// 判断字典的 Source 是否指向指定文件名。
+    ///
+    /// 关键：Generic.xaml 内嵌套字典的 Source 写的是**相对路径**（如 <c>"Colors.xaml"</c>），
+    /// 而外层合并时是 <c>"pack://…/Themes/Colors.xaml"</c>。
+    /// 早期实现用 <c>src.Contains("/Colors.xaml")</c> 匹配，相对路径没有前导斜杠、必然失败，
+    /// 导致 1 参数重载对「按 README 合并 Generic.xaml」的标准用法直接抛异常。
+    /// 这里改为取路径末段做精确文件名比较，同时兼容相对与绝对路径。
+    /// </summary>
+    private static bool IsSameNamedDict(ResourceDictionary dict, string fileName)
+    {
+        var src = dict.Source?.OriginalString;
+        if (string.IsNullOrEmpty(src)) return false;
+
+        var normalized = src!.Replace('\\', '/');
+        var slash = normalized.LastIndexOf('/');
+        var name = slash >= 0 ? normalized[(slash + 1)..] : normalized;
+
+        return string.Equals(name, fileName, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
     /// 初始化主题支持。应用启动时调用一次，必须在 UI 线程。</summary>
     /// <returns><c>true</c> 表示初始化成功。</returns>
     /// <exception cref="InvalidOperationException">
@@ -43,8 +64,7 @@ public static class ThemeHelper
         // Find Generic.xaml inside Application.Resources.MergedDictionaries (one level deep)
         foreach (var dict in appResources.MergedDictionaries)
         {
-            var src = dict.Source?.OriginalString ?? "";
-            if (src.Contains("/Generic.xaml"))
+            if (IsSameNamedDict(dict, "Generic.xaml"))
             {
                 _genericDict = dict;
                 break;
@@ -63,11 +83,10 @@ public static class ThemeHelper
         // Find Colors.xaml and ColorsDark.xaml inside Generic.xaml's MergedDictionaries
         foreach (var dict in _genericDict.MergedDictionaries)
         {
-            var src = dict.Source?.OriginalString ?? "";
-            if (src.Contains("/Colors.xaml") && !src.Contains("Dark"))
-                _colorsLight = dict;
-            if (src.Contains("/ColorsDark.xaml"))
+            if (IsSameNamedDict(dict, "ColorsDark.xaml"))
                 _colorsDark = dict;
+            else if (IsSameNamedDict(dict, "Colors.xaml"))
+                _colorsLight = dict;
         }
 
         if (_colorsLight is null || _colorsDark is null)

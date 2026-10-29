@@ -45,6 +45,10 @@ public static class PclToast
 
     private static readonly Dictionary<Window, ToastHost> Hosts = new();
 
+    /// <summary>去重窗口：相同消息在极短时间内重复调用只显示一次（防重复触发）。</summary>
+    private static readonly Dictionary<string, DateTime> Recent = new();
+    private static readonly TimeSpan DedupeWindow = TimeSpan.FromMilliseconds(800);
+
     /// <summary>距底边距（默认 20，对齐 CE 的 PanHint）。</summary>
     public static double BottomMargin { get; set; } = 20;
 
@@ -66,6 +70,13 @@ public static class PclToast
     {
         var win = Window.GetWindow(anchor);
         if (win is null) return;
+
+        // 去重：调用方可能因控件重复 Loaded 等原因连续触发同一消息
+        var dedupeKey = ((int)kind) + "|" + message;
+        var now = DateTime.UtcNow;
+        if (Recent.TryGetValue(dedupeKey, out var last) && now - last < DedupeWindow)
+            return;
+        Recent[dedupeKey] = now;
 
         var host = GetOrCreateHost(win);
         var toast = Build(message, kind);
@@ -123,18 +134,19 @@ public static class PclToast
         if (Hosts.TryGetValue(win, out var existing) && existing.Layer.Parent != null)
             return existing;
 
-        // 用一个覆盖全窗口、不拦截命中的 Canvas 作为浮层
+        // 覆盖全窗口、不拦截命中的 Canvas 浮层。
+        // 注意：必须用 Stretch 撑满宿主，否则 Canvas 在 Grid 中按 Left/Top 对齐时
+        // 期望尺寸为 0、ActualWidth 恒为 0，Layout 会拿不到尺寸（历史 bug：曾因此自旋挂起）。
         var layer = new Canvas
         {
             IsHitTestVisible = false,
-            HorizontalAlignment = HorizontalAlignment.Left,
-            VerticalAlignment = VerticalAlignment.Top
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment = VerticalAlignment.Stretch
         };
 
-        FrameworkElement root = win;
         if (win.Content is Grid g)
         {
-            // 直接叠加到现有根 Grid 上，跨所有行
+            // 直接叠加到现有根 Grid 上，跨所有行列
             Grid.SetRowSpan(layer, Math.Max(1, g.RowDefinitions.Count));
             Grid.SetColumnSpan(layer, Math.Max(1, g.ColumnDefinitions.Count));
             g.Children.Add(layer);
@@ -145,42 +157,46 @@ public static class PclToast
         }
         else
         {
-            // 退化为包裹一层
+            // 退化：包裹一层 Grid
             var wrapper = new Grid();
             var old = win.Content as UIElement;
             win.Content = null;
             if (old != null) wrapper.Children.Add(old);
             wrapper.Children.Add(layer);
             win.Content = wrapper;
-            root = wrapper;
         }
 
         var host = new ToastHost { Layer = layer };
         Hosts[win] = host;
 
-        // 窗口尺寸变化时重排
+        // 尺寸就绪 / 变化时重排。只在事件里重试，绝不在 Layout 内自旋。
+        layer.SizeChanged += (_, _) => Layout(host);
         win.SizeChanged += (_, _) => Layout(host);
+
+        // 首次布局：等控件完成一次测量后再排
+        layer.Loaded += (_, _) => Layout(host);
+
         return host;
     }
 
     private static void Layout(ToastHost host)
     {
         var layer = host.Layer;
-        var availableWidth = layer.ActualWidth > 0 ? layer.ActualWidth : layer.Width;
-        if (double.IsNaN(availableWidth) || availableWidth <= 0)
-        {
-            // 还没测量：等下一次
-            layer.Dispatcher.BeginInvoke(new Action(() => Layout(host)));
+        var width = layer.ActualWidth;
+        var height = layer.ActualHeight;
+
+        // 尺寸还没就绪就直接返回 —— 由 Loaded / SizeChanged 再次触发，
+        // 不在这里有 BeginInvoke 自旋，避免忙等导致应用挂起。
+        if (double.IsNaN(width) || double.IsNaN(height) || width <= 0 || height <= 0)
             return;
-        }
 
         double offset = BottomMargin;
         for (int i = host.Visible.Count - 1; i >= 0; i--)
         {
             var t = host.Visible[i];
-            t.Measure(new Size(availableWidth, double.PositiveInfinity));
+            t.Measure(new Size(width, double.PositiveInfinity));
             var h = t.DesiredSize.Height;
-            var y = layer.ActualHeight - offset - h;
+            var y = height - offset - h;
             Canvas.SetLeft(t, LeftMargin);
             Canvas.SetTop(t, y < 0 ? 0 : y);
             offset += h + 8;
@@ -208,18 +224,23 @@ public static class PclToast
 
     private static Border Build(string message, PclToastKind kind)
     {
-        (Color accent, Color bg, Color fg) = kind switch
+        // 配色优先取调色板（随主题/明暗切换），取不到才回退内置语义色。
+        // 早期实现用硬编码色板，深色模式下不跟随 —— 这里统一走资源查找。
+        (string accentKey, string bgKey, Color accentFallback, Color bgFallback) = kind switch
         {
-            PclToastKind.Success => (C(0x1E, 0x7A, 0x45), C(0xE9, 0xF7, 0xEE), C(0x1E, 0x7A, 0x45)),
-            PclToastKind.Warning => (C(0xA8, 0x79, 0x1B), C(0xFD, 0xF6, 0xE3), C(0xA8, 0x79, 0x1B)),
-            PclToastKind.Error => (C(0xC0, 0x36, 0x2C), C(0xFD, 0xEC, 0xEC), C(0xC0, 0x36, 0x2C)),
-            _ => (C(0x1A, 0x6F, 0xD4), C(0xE8, 0xF1, 0xFD), C(0x1A, 0x6F, 0xD4))
+            PclToastKind.Success => ("ToastSuccessFg", "ToastSuccessBg", C(0x1E, 0x7A, 0x45), C(0xE9, 0xF7, 0xEE)),
+            PclToastKind.Warning => ("ToastWarningFg", "ToastWarningBg", C(0xA8, 0x79, 0x1B), C(0xFD, 0xF6, 0xE3)),
+            PclToastKind.Error => ("ColorBrushRedDark", "ColorBrushRedBack", C(0xC0, 0x36, 0x2C), C(0xFD, 0xEC, 0xEC)),
+            _ => ("ColorBrush3", "ColorBrush8", C(0x1A, 0x6F, 0xD4), C(0xE8, 0xF1, 0xFD))
         };
+
+        var accent = ResolveBrush(accentKey, accentFallback);
+        var bg = ResolveBrush(bgKey, bgFallback);
 
         return new Border
         {
-            Background = new SolidColorBrush(bg),
-            BorderBrush = new SolidColorBrush(accent),
+            Background = bg,
+            BorderBrush = accent,
             BorderThickness = new Thickness(3, 0, 0, 0),
             CornerRadius = new CornerRadius(3),
             Padding = new Thickness(12, 9, 14, 9),
@@ -233,9 +254,21 @@ public static class PclToast
                 Text = message,
                 FontSize = 12.5,
                 TextWrapping = TextWrapping.Wrap,
-                Foreground = new SolidColorBrush(fg)
+                Foreground = accent
             }
         };
+    }
+
+    private static Brush ResolveBrush(string key, Color fallback)
+    {
+        try
+        {
+            if (Application.Current?.TryFindResource(key) is Brush b) return b;
+        }
+        catch { }
+        var solid = new SolidColorBrush(fallback);
+        solid.Freeze();
+        return solid;
     }
 
     private static Color C(byte r, byte g, byte b) => Color.FromRgb(r, g, b);

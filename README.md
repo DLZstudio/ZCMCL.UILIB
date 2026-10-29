@@ -51,15 +51,26 @@ src/
 
 ## 构建
 
-需要 **.NET 10 SDK**（目标框架 `net10.0-windows`）。
+需要 **.NET 10 SDK**（目标框架 `net10.0-windows`，验证于 10.0.114）。
 
 ```bash
 dotnet build src/ZCMCL.UILIB/ZCMCL.UILIB.csproj -c Release
 ```
 
+或使用解决方案（供 IDE 打开）：
+
+```bash
+dotnet build ZCMCL.UILIB.slnx -c Release
+```
+
+> `.slnx` 需要较新的 SDK。若遇到「`dotnet build *.slnx` 无输出失败 / 只构建了
+> SourceGenerators 就报生成失败」，请改用上面的 **csproj 命令** ——
+> CI 也是走 csproj（`SourceGenerators` 会经 `ProjectReference` 自动构建）。
+
 注意：源生成器依赖 Roslyn `Microsoft.CodeAnalysis.CSharp` **5.0.0**。
 上游用 5.6.0，但 .NET 10.0.1xx SDK 内置编译器为 5.0，版本过新会导致
 生成器被跳过、进而 `partial` 属性大量报错（CS9248）。
+`Microsoft.CodeAnalysis.Analyzers` 不显式引用，交由上述包传递带出 3.11.0。
 
 ## 在 WPF 项目中使用
 
@@ -156,6 +167,15 @@ xmlns:pcl="clr-namespace:ZCMCL.UILIB.UI.Controls.Pcl;assembly=ZCMCL.UILIB"
 
 <!-- 卡片（XAML 内容自动落到 Content，不会盖住标题行） -->
 <pcl:PclCard Title="日志" IsCollapsible="True" IsExpanded="True">
+    <TextBlock Text="内容" />
+</pcl:PclCard>
+
+<!-- 卡片 + 标题行右侧附加内容（对应 CE 组件卡的「标题 + 已选版本」） -->
+<pcl:PclCard Title="组件">
+    <pcl:PclCard.HeaderContent>
+        <TextBlock Text="Forge 47.4.28" FontSize="11"
+                   Foreground="{DynamicResource TextTertiaryBrush}" />
+    </pcl:PclCard.HeaderContent>
     <TextBlock Text="内容" />
 </pcl:PclCard>
 

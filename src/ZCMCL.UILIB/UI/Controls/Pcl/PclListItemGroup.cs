@@ -29,11 +29,48 @@ public class PclListItemGroup : StackPanel
         Orientation = Orientation.Vertical;
     }
 
-    /// <summary>添加并接入互斥逻辑。</summary>
+    /// <summary>
+    /// 子项变化时统一接线。
+    ///
+    /// XAML 里直接写 <c>&lt;PclListItemGroup&gt;&lt;PclListItem/&gt;&lt;/...&gt;</c> 时，
+    /// 子项是经由 Panel.Children 加入的，不会走 <see cref="AddItem"/>，
+    /// 早期实现因此对 XAML 声明的项完全不生效（点击无选中）。
+    /// 这里重写视觉子项变化，保证两种添加方式行为一致。
+    /// </summary>
+    protected override void OnVisualChildrenChanged(DependencyObject visualAdded, DependencyObject visualRemoved)
+    {
+        base.OnVisualChildrenChanged(visualAdded, visualRemoved);
+
+        if (visualAdded is PclListItem added)
+            Wire(added);
+
+        if (visualRemoved is PclListItem removed)
+            removed.Click -= OnItemClick;
+
+        // 移除了当前选中项时清空选中
+        if (visualRemoved is PclListItem gone && ReferenceEquals(SelectedItem, gone))
+        {
+            SelectedItem = null;
+            SelectionChanged?.Invoke(this, null);
+        }
+    }
+
+    private void Wire(PclListItem item)
+    {
+        // 避免重复接线（同名委托可通过 -= 再 += 归一，这里直接先摘后挂）
+        item.Click -= OnItemClick;
+        item.Click += OnItemClick;
+    }
+
+    private void OnItemClick(object? sender, EventArgs e)
+    {
+        if (sender is PclListItem item) Select(item);
+    }
+
+    /// <summary>添加并接入互斥逻辑（代码方式的便捷入口，与 XAML 声明等价）。</summary>
     public PclListItem AddItem(PclListItem item)
     {
-        item.Click += (_, _) => Select(item);
-        Children.Add(item);
+        Children.Add(item);   // 接线由 OnVisualChildrenChanged 统一处理
         return item;
     }
 

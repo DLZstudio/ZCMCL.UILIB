@@ -59,15 +59,31 @@ public class PclLoading : Grid
             Stretch = Stretch.Uniform,
             RenderTransformOrigin = new Point(0.5, 0.5),
             RenderTransform = _rotate,
-            Stroke = new SolidColorBrush(Color.FromRgb(0x13, 0x70, 0xF3))   // ColorBrush3
+            // 跟随主题：优先取调色板 ColorBrush3（PCL 主色），取不到回退内置色
+            Stroke = Resolve<Brush>("ColorBrush3", new SolidColorBrush(Color.FromRgb(0x13, 0x70, 0xF3)))
         };
         Children.Add(_arc);
 
         Width = Size;
         Height = Size;
 
-        Loaded += (_, _) => UpdateAnimation();
+        // 调色板可能在初始化后才就绪（或运行时换主题），此时重新解析一次描边色
+        Loaded += (_, _) =>
+        {
+            _arc.Stroke = Resolve<Brush>("ColorBrush3", _arc.Stroke);
+            UpdateAnimation();
+        };
         Unloaded += (_, _) => StopAnimation();
+    }
+
+    private static T Resolve<T>(string key, T fallback)
+    {
+        try
+        {
+            if (Application.Current?.TryFindResource(key) is T v) return v;
+        }
+        catch { }
+        return fallback;
     }
 
     /// <summary>画一个约 270° 的圆弧（比整圈更有「转动」的视觉参考）。</summary>

@@ -56,10 +56,24 @@ public class PclCard : Grid
         DependencyProperty.Register(nameof(Content), typeof(object), typeof(PclCard),
             new PropertyMetadata(null, OnContentChanged));
 
+    public static readonly DependencyProperty HeaderContentProperty =
+        DependencyProperty.Register(nameof(HeaderContent), typeof(object), typeof(PclCard),
+            new PropertyMetadata(null, OnHeaderContentChanged));
+
     public string Title
     {
         get => (string)GetValue(TitleProperty);
         set => SetValue(TitleProperty, value);
+    }
+
+    /// <summary>
+    /// 标题行右侧的附加内容（折叠箭头左侧）。
+    /// 用于 CE 组件卡那种「标题 + 已选版本/图标」的形态。
+    /// </summary>
+    public object HeaderContent
+    {
+        get => GetValue(HeaderContentProperty);
+        set => SetValue(HeaderContentProperty, value);
     }
 
     public bool IsCollapsible
@@ -95,6 +109,7 @@ public class PclCard : Grid
 
     private readonly Border _border;
     private readonly ContentPresenter _host;
+    private readonly ContentPresenter _headerSuffix;
     private readonly TextBlock _titleBlock;
     private readonly Path _arrow;
     private readonly DropShadowEffect _shadow;
@@ -144,6 +159,18 @@ public class PclCard : Grid
         Grid.SetRow(_titleBlock, 0);
         inner.Children.Add(_titleBlock);
 
+        // 标题行右侧附加内容（折叠箭头左侧）
+        _headerSuffix = new ContentPresenter
+        {
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 36, 0),   // 给右侧箭头留位
+            Visibility = Visibility.Collapsed,
+            IsHitTestVisible = true
+        };
+        Grid.SetRow(_headerSuffix, 0);
+        inner.Children.Add(_headerSuffix);
+
         // 折叠箭头（10×6，右上，指向下方=展开）
         _arrow = new Path
         {
@@ -188,6 +215,14 @@ public class PclCard : Grid
         c.RefreshTitleRow();
     }
 
+    private static void OnHeaderContentChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is not PclCard c) return;
+        c._headerSuffix.Content = e.NewValue;
+        c._headerSuffix.Visibility = e.NewValue is null ? Visibility.Collapsed : Visibility.Visible;
+        c.RefreshTitleRow();
+    }
+
     /// <summary>
     /// 标题行高度随有无标题自适应：
     /// 有标题 → 38（CE 的内容起点）；无标题 → 0，内容改为顶部 15 边距，
@@ -196,12 +231,16 @@ public class PclCard : Grid
     private void RefreshTitleRow()
     {
         var hasTitle = !string.IsNullOrWhiteSpace(_titleBlock.Text);
+        var hasHeaderContent = _headerSuffix.Content is not null;
+        var showRow = hasTitle || hasHeaderContent;
+
         _titleBlock.Visibility = hasTitle ? Visibility.Visible : Visibility.Collapsed;
+        _headerSuffix.Visibility = hasHeaderContent ? Visibility.Visible : Visibility.Collapsed;
         if (hasTitle)
             _arrow.Visibility = IsCollapsible ? Visibility.Visible : Visibility.Collapsed;
 
-        _innerRows[0].Height = hasTitle ? new GridLength(TitleRowHeight) : new GridLength(0);
-        _host.Margin = hasTitle
+        _innerRows[0].Height = showRow ? new GridLength(TitleRowHeight) : new GridLength(0);
+        _host.Margin = showRow
             ? new Thickness(25, 0, 23, 15)
             : new Thickness(15, 12, 15, 12);
     }
