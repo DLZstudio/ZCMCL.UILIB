@@ -130,16 +130,51 @@ ThemeHelper.Initialize(genericDict, colorsLightDict, colorsDarkDict);
 
 | PCL 控件 | 用途 | 建议替代做法 |
 |---|---|---|
-| `MyCard` | 带标题行 + 可折叠 + 缓动高度 | `PlainCard` + 自建标题 `Grid` |
-| `MyListItem` | 导航行 / 单选行（图标 + 标题 + 右按钮） | `PlainCard` + `Style` 自绘，或 `ListBoxItem` |
-| `MyHint` | 三色提示条（蓝/黄/红，左侧色条） | `Border` + `BorderThickness="3,0,0,0"` |
-| `MyLoading` | 镐子加载动画 | 自建 `Storyboard` |
-| `MyMsg*` | 窗体内模态弹窗 | `Window` + `BlurBorder` |
-| 应用内 Toast | 窗口内提示条 | 自建 `Canvas` 浮层 |
+| `MyMsg*` | 窗体内模态弹窗 | `Window` + `BlurBorder`，或先自行封装 |
+| `MyExtraButton` | 右下角浮动圆钮 | `Button` + 圆角样式 |
 
 > `HintWrapper` / `MsgBoxWrapper` 只提供 `OnShow` 事件抽象，**没有默认宿主实现**，
 > 需要接管该事件自行渲染。`ToastNotification` 是**系统级** Windows 通知（含 AUMID 注册），
-> 不是 PCL 那种窗口内提示条。
+> 不是 PCL 那种窗口内提示条 —— 窗口内提示请用下面的 `PclToast`。
+
+### PCL 页面骨架控件（`ZCMCL.UILIB.UI.Controls.Pcl`）
+
+这批控件直接对应 PCL 页面里撑起布局的那几类，**控件自包含**（视觉树在构造时构建），
+引用程序集即可用，不依赖任何 `ResourceDictionary` 合并；颜色会跟随调色板（找不到资源时回退到内置色）。
+
+| 控件 | 对应 PCL | 说明 |
+|---|---|---|
+| `PclCard` | `MyCard` | 标题行 + 可折叠（点标题折叠，箭头旋转）+ 悬停阴影。圆角 5、标题 15,12/13px Bold、内容区从 y=38 起；无标题时自动收为紧凑布局 |
+| `PclListItem` | `MyListItem` | 导航行/列表行。图标 18 + 标题 + 右侧附加内容；选中时左侧 5px 圆角竖条 + 图标文字转主题色 |
+| `PclListItemGroup` | （`MyListItem` 内的互斥逻辑） | 互斥容器，`Group.Select(item)` / 自动管理选中态 |
+| `PclHint` | `MyHint` | 三色提示条（`Info`/`Success`/`Warning`/`Error`），左侧 3px 色条、圆角 2、`Padding 12,9`、`LineHeight 16` |
+| `PclLoading` | `MyLoading` | 旋转圆弧加载指示器（矢量重绘，不依赖序列帧图片资源），`IsRunning` 可控 |
+| `PclToast` | `HintService` 的窗口内提示 | 静态调用 `PclToast.Show("文本", this, PclToastKind.Error)`；左下角堆叠、自动淡入淡出 |
+
+```xml
+xmlns:pcl="clr-namespace:ZCMCL.UILIB.UI.Controls.Pcl;assembly=ZCMCL.UILIB"
+
+<!-- 卡片（XAML 内容自动落到 Content，不会盖住标题行） -->
+<pcl:PclCard Title="日志" IsCollapsible="True" IsExpanded="True">
+    <TextBlock Text="内容" />
+</pcl:PclCard>
+
+<!-- 提示条 -->
+<pcl:PclHint Text="需要先创建一个实例" Theme="Warning" />
+
+<!-- 导航行组（互斥选中） -->
+<pcl:PclListItemGroup x:Name="Nav">
+    <pcl:PclListItem Title="启动" Icon="lucide/play" />
+    <pcl:PclListItem Title="下载" Icon="lucide/download" />
+</pcl:PclListItemGroup>
+```
+
+```csharp
+// 选中第二项
+Nav.SelectIndex(1);
+// 窗口内浮层提示
+PclToast.Show("已保存", this, PclToastKind.Success);
+```
 
 ### 输入框水印与错误态
 
