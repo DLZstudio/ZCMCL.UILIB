@@ -48,23 +48,27 @@
         <DefineConstants Condition="'$(Configuration)' == 'Release' Or '$(Configuration)' == 'Publish'">RELEASE;PUBLISH</DefineConstants>
         <DefineConstants Condition="'$(Configuration)' == 'Beta'">BETA;PUBLISH</DefineConstants>
     </PropertyGroup>
-    <!-- NuGet 引用（已按 ZCMCL 用途精简：剔除游戏/整合包/联机/遥测等内核侧职责的依赖） -->
+    <!--
+        NuGet 引用（已按 ZCMCL 用途精简：剔除游戏/整合包/联机/遥测等内核侧职责的依赖）
+
+        注意：Microsoft.CSharp、System.Text.Json、System.Security.Cryptography.ProtectedData
+        自 .NET 起已并入共享框架，再显式引用会触发 NU1510 警告（「将不会删除」）。
+        代码里仍在使用它们（dynamic / JSON 序列化 / DPAPI），但应由框架提供，
+        因此从 PackageReference 中移除，而不是保留一条无意义的声明。
+    -->
     <ItemGroup>
         <!-- UI -->
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
         <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.142" />
         <PackageReference Include="Wacton.Unicolour" Version="8.0.0" />
-        <!-- 语言和系统特性 -->
-        <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+        <!-- 系统特性 -->
         <PackageReference Include="System.Management" Version="10.0.9" />
-        <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.9" />
         <PackageReference Include="PlainToolkit.CngProtectedData" Version="2.1.0" />
         <!-- 归档文件 -->
         <PackageReference Include="SharpZipLib" Version="1.4.2" />
         <!-- 配置文件和缓存 -->
         <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.9" />
         <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3" />
-        <PackageReference Include="System.Text.Json" Version="10.0.9" />
         <PackageReference Include="YamlDotNet" Version="18.1.0" />
         <!-- 网络（DNS / Http。已移除联机用的 Stun.Net） -->
         <PackageReference Include="Ae.Dns.Client" Version="3.1.0" />

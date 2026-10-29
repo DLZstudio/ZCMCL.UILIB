@@ -37,7 +37,8 @@ public static class ImageLoaderHelper {
         string base64String, 
         Image imageElement, 
         string? fallbackImageUri = null) {
-        ArgumentNullException.ThrowIfNull(nameof(imageElement));
+        // 注意：必须传变量本身，传 nameof(...) 会永远为真、使校验失效（CA2264）
+        ArgumentNullException.ThrowIfNull(imageElement);
         
         if (string.IsNullOrWhiteSpace(base64String)) {
             SetFallbackImage(imageElement, fallbackImageUri);
@@ -133,7 +134,8 @@ public static class ImageLoaderHelper {
         string imagePath,
         Image imageElement,
         string fallbackImageUri) {
-        ArgumentNullException.ThrowIfNull(nameof(imageElement));
+        // 同上：传变量而非 nameof，避免无效校验
+        ArgumentNullException.ThrowIfNull(imageElement);
 
         if (string.IsNullOrWhiteSpace(imagePath) || !File.Exists(imagePath)) {
             SetFallbackImage(imageElement, fallbackImageUri);

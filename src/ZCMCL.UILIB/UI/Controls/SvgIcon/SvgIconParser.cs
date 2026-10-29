@@ -84,6 +84,7 @@ internal static class SvgIconParser
         }
         catch (Exception ex)
         {
+            // ex 仅在 DEBUG 下用于日志，Release 下不引用，避免 CS0168。
 #if DEBUG
             var descriptor = name;
             var d = _Attr(element, "d");
@@ -91,6 +92,8 @@ internal static class SvgIconParser
                 descriptor += $" d=\"{(d.Length > 80 ? d[..80] + "..." : d)}\"";
 
             LogWrapper.Debug(ex, "SvgIcon", $"跳过无法解析的 SVG 元素：{descriptor}");
+#else
+            _ = ex;
 #endif
             // 单个图元解析失败时跳过，避免一个不兼容节点导致整个图标不可用。
             return null;
