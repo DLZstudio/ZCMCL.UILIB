@@ -100,4 +100,12 @@
         </Setter>
     </Style>
 
+    <!--
+        ZCMCL 补：ScrollViewer 隐式样式（用标准变体 PlainScrollViewer）。
+        上游给了 3 个 Keyed 变体但没有任何隐式版本，导致裸写 <ScrollViewer/>
+        仍是系统滚动条，滚动条外观与 PCL 风格不一致。
+        若宿主不希望全局生效，可在自己的资源字典里覆盖。
+    -->
+    <Style TargetType="ScrollViewer" BasedOn="{StaticResource PlainScrollViewer}" />
+
 </ResourceDictionary>

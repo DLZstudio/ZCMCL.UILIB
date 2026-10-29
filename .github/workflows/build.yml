@@ -1,0 +1,63 @@
+name: build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      # 构建必须 0 警告：历史上出现过「依赖声明了 nuget.org 上不存在的版本」
+      # 这类问题（NU1603 静默上浮），只有把警告当错误才能拦住。
+      - name: Restore
+        run: dotnet restore ZCMCL.UILIB.slnx
+
+      - name: Build (Release, warnings as errors)
+        run: dotnet build ZCMCL.UILIB.slnx -c Release --no-restore -warnaserror
+
+      # 校验每个源文件都带 SPDX 许可标识（混合许可项目的合规底线）
+      - name: Check SPDX headers
+        shell: pwsh
+        run: |
+          $missing = @()
+          Get-ChildItem -Path src -Recurse -Include *.cs,*.xaml,*.csproj |
+            Where-Object { $_.FullName -notmatch '\\(bin|obj)\\' } |
+            ForEach-Object {
+              $head = Get-Content $_.FullName -TotalCount 12 -ErrorAction SilentlyContinue
+              if (-not ($head -join "`n").Contains('SPDX-License-Identifier')) {
+                $missing += $_.FullName
+              }
+            }
+          if ($missing.Count -gt 0) {
+            Write-Host "以下文件缺少 SPDX 许可标识："
+            $missing | ForEach-Object { Write-Host "  $_" }
+            exit 1
+          }
+          Write-Host "所有源文件均带 SPDX 许可标识"
+
+      # 校验默认图标包指向真实存在的目录（防止 SvgIcon 静默失效回归）
+      - name: Check default icon pack exists
+        shell: pwsh
+        run: |
+          $loader = Get-Content 'src/ZCMCL.UILIB/UI/Controls/SvgIcon/SvgIconLoader.cs' -Raw
+          if ($loader -match 'DefaultIconPack\s*=\s*"([^"]+)"') {
+            $pack = $Matches[1]
+          } else {
+            Write-Error '未找到 DefaultIconPack 定义'; exit 1
+          }
+          $dir = "src/ZCMCL.UILIB/UI/Assets/IconPacks/$pack"
+          if (-not (Test-Path $dir)) {
+            Write-Error "DefaultIconPack='$pack' 但目录 $dir 不存在 —— SvgIcon 会静默不渲染"; exit 1
+          }
+          Write-Host "默认图标包 '$pack' 存在"

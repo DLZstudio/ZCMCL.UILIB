@@ -22,20 +22,19 @@
 
     <ItemGroup>
         <!--
-            Roslyn 版本选择说明：
+            Roslyn 版本说明：
             .NET 10.0.1xx SDK 内置编译器为 Roslyn 5.0，而上游 PCL.Core 用 5.6.0 编译生成器，
-            触发 CS9057「分析器引用的编译器版本比当前运行的更新」，生成器被静默跳过，
-            进而 partial 属性大面积报 CS9248。
+            会触发 CS9057「分析器引用的编译器版本比当前运行的更新」，生成器被静默跳过，
+            进而 partial 属性大面积报 CS9248。所以要把编译器引用降到当前 SDK 能加载的 5.0.0。
 
-            因此编译器引用降到 5.0.0（nuget.org 上存在该版本）。
-
-            但 Microsoft.CodeAnalysis.Analyzers 没有 5.0.0 —— 它只有 3.x / 4.x / 5.3.0 / 5.6.0 / 5.9.0。
-            写一个不存在的版本只会得到 NU1603 警告并被静默提升到最近的 5.3.0，
-            对使用者造成困惑，故直接声明真实版本 5.3.0。
-            该包仅为分析器辅助（PrivateAssets=all，不随产物分发），5.3.0 与 Roslyn 5.0 兼容。
+            Microsoft.CodeAnalysis.Analyzers 不显式引用：
+            该包没有 5.0.0 稳定版（只有 3.x / 4.x / 5.3.0 / 5.6.0 / 5.9.0）。此前写 5.0.0
+            会得到 NU1603「未找到 5.0.0，已改为解析 5.3.0」的静默上浮 —— 声明版本 ≠ 实际版本，
+            离线/镜像源缺 5.3.0 时直接还原失败。
+            实测 Microsoft.CodeAnalysis.CSharp 5.0.0 的传递依赖就是 Analyzers 3.11.0，
+            因此交由传递依赖决定，既无警告也不写死一个可能与编译器不匹配的版本。
         -->
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" PrivateAssets="all" />
-        <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="5.3.0" PrivateAssets="all" />
     </ItemGroup>
 
 </Project>

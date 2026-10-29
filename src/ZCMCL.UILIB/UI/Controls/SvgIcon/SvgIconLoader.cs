@@ -14,7 +14,15 @@ namespace ZCMCL.UILIB.UI.Controls.SvgIcon;
 
 public static class SvgIconLoader
 {
-    public const string DefaultIconPack = "default";
+    /// <summary>
+    /// 默认图标包。必须是仓库内实际存在的目录（当前为 lucide）。
+    ///
+    /// 历史上这里是 "default"，但 IconPacks/ 下并没有 default/ 目录，
+    /// 导致 <c>Icon="play"</c>（不带包名前缀）静默渲染为空白 —— 页面能跑、布局正常、
+    /// 图标全没，排查成本极高。改为实际存在的 "lucide" 后，
+    /// <c>Icon="play"</c> 与 <c>Icon="lucide/play"</c> 等价。
+    /// </summary>
+    public const string DefaultIconPack = "lucide";
 
     private static readonly string _AssemblyName =
         typeof(SvgIconLoader).Assembly.GetName().Name ?? "ZCMCL.UILIB";
@@ -22,13 +30,18 @@ public static class SvgIconLoader
     private static readonly ConcurrentDictionary<string, Lazy<SvgIconModel?>> _Cache =
         new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// 图标资源缺失时的回调（包名、图标名）。可用于在开发期把静默失败暴露出来。
+    /// </summary>
+    public static event Action<string, string>? IconMissing;
+
     internal static SvgIconModel? Load(string? icon, string? defaultPack = null)
     {
         var key = SvgIconKey.TryParse(icon, defaultPack ?? DefaultIconPack);
         if (key is null)
         {
             if (!string.IsNullOrWhiteSpace(icon))
-                _LogDebug($"无效的 SVG 图标标识：{icon}");
+                _Log($"无效的 SVG 图标标识：{icon}", warning: false);
             return null;
         }
 
@@ -51,7 +64,11 @@ public static class SvgIconLoader
             var info = Application.GetResourceStream(uri);
             if (info is null)
             {
-                _LogDebug($"缺少 SVG 图标资源：{key} ({uri})");
+                // 图标缺失是「静默错误」的典型来源：控件不报错、只是空白。
+                // 这里提升为 Warning 级日志（Release 下也输出），并触发 IconMissing 事件。
+                _Log($"缺少 SVG 图标资源：{key}（检查包名是否正确，或改用 lucide/{key.Name}）",
+                    warning: true);
+                IconMissing?.Invoke(key.Pack, key.Name);
                 return null;
             }
 
@@ -62,19 +79,33 @@ public static class SvgIconLoader
         }
         catch (Exception ex)
         {
-            _LogDebug($"加载 SVG 图标失败：{key}", ex);
+            _Log($"加载 SVG 图标失败：{key}", warning: true, ex);
+            IconMissing?.Invoke(key.Pack, key.Name);
             return null;
         }
     }
 
-    private static void _LogDebug(string message, Exception? ex = null)
+    private static void _Log(string message, bool warning, Exception? ex = null)
     {
+        // warning=true 时在 Release 下也输出，保证「图标没显示」有据可查；
+        // 其余诊断信息维持仅 DEBUG 输出，避免日志噪音。
 #if DEBUG
-        if (ex is null)
-            LogWrapper.Debug("SvgIcon", message);
-        else
-            LogWrapper.Debug(ex, "SvgIcon", message);
+        var emit = true;
+#else
+        var emit = warning;
 #endif
+        if (!emit) return;
+
+        if (warning)
+        {
+            if (ex is null) LogWrapper.Warn("SvgIcon", message);
+            else LogWrapper.Warn(ex, "SvgIcon", message);
+        }
+        else
+        {
+            if (ex is null) LogWrapper.Debug("SvgIcon", message);
+            else LogWrapper.Debug(ex, "SvgIcon", message);
+        }
     }
 
     private readonly record struct SvgIconKey(string Pack, string Name)

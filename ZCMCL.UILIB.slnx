@@ -1,0 +1,6 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ZCMCL.UILIB.SourceGenerators/ZCMCL.UILIB.SourceGenerators.csproj" />
+    <Project Path="src/ZCMCL.UILIB/ZCMCL.UILIB.csproj" />
+  </Folder>
+</Solution>

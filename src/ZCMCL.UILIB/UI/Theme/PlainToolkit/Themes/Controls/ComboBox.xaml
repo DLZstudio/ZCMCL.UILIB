@@ -294,4 +294,11 @@
         </Setter>
     </Style>
 
+    <!--
+        ZCMCL 补：ComboBox 隐式样式。
+        上游只给了 Keyed 的 PlainComboBox，但同文件的 ComboBoxItem 有隐式样式，
+        结果直接写 <ComboBox/> 时会出现「下拉项是 PCL 风格、输入框是系统风格」的割裂。
+    -->
+    <Style TargetType="ComboBox" BasedOn="{StaticResource PlainComboBox}" />
+
 </ResourceDictionary>
