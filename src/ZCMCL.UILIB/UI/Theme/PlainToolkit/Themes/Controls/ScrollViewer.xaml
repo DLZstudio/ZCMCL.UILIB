@@ -59,7 +59,6 @@
                                    Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}"
                                    Value="{Binding VerticalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}"
                                    ViewportSize="{TemplateBinding ViewportHeight}"
-                                   Foreground="{TemplateBinding Foreground}"
                                    Background="{TemplateBinding Background}" />
                     </Grid>
                 </ControlTemplate>
@@ -92,7 +91,6 @@
                                    Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}"
                                    Value="{Binding VerticalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}"
                                    ViewportSize="{TemplateBinding ViewportHeight}"
-                                   Foreground="{TemplateBinding Foreground}"
                                    Background="{TemplateBinding Background}" />
                     </Grid>
                 </ControlTemplate>

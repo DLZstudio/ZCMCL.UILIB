@@ -13,11 +13,20 @@
             <Setter.Value>
                 <ControlTemplate TargetType="Thumb">
                     <Border Background="{DynamicResource ColorBrushSemiTransparent}" SnapsToDevicePixels="True">
-                        <Border x:Name="thumbInner" Background="{TemplateBinding Foreground}" CornerRadius="3" Margin="2" />
+                        <!--
+                            ZCMCL 修复：滑块颜色不再用 TemplateBinding Foreground。
+                            上游 ScrollViewer 模板会把继承来的 Foreground（通常为黑色）传给 ScrollBar，
+                            导致滑块被渲染成纯黑竖条。这里改为直接取调色板灰阶，不受宿主 Foreground 影响。
+                        -->
+                        <Border x:Name="thumbInner" Background="{DynamicResource ColorBrushGray4}"
+                                CornerRadius="3" Margin="2" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="thumbInner" Property="Background" Value="{DynamicResource ColorBrushButtonHoverBorder}" />
+                        </Trigger>
+                        <Trigger Property="IsDragging" Value="True">
+                            <Setter TargetName="thumbInner" Property="Background" Value="{DynamicResource ColorBrush3}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

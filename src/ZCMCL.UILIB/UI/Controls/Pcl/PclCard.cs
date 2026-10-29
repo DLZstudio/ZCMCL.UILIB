@@ -60,6 +60,31 @@ public class PclCard : Grid
         DependencyProperty.Register(nameof(HeaderContent), typeof(object), typeof(PclCard),
             new PropertyMetadata(null, OnHeaderContentChanged));
 
+    public static readonly DependencyProperty BorderThicknessProperty =
+        DependencyProperty.Register(nameof(BorderThickness), typeof(Thickness), typeof(PclCard),
+            new PropertyMetadata(new Thickness(1), OnBorderChanged));
+
+    public static readonly DependencyProperty BorderBrushProperty =
+        DependencyProperty.Register(nameof(BorderBrush), typeof(Brush), typeof(PclCard),
+            new PropertyMetadata(null, OnBorderBrushChanged));
+
+    /// <summary>
+    /// 卡片描边粗细。CE 的 <c>MyCard</c> 实际**无边框**（靠阴影分层），
+    /// 需要与 CE 一致时设 <c>BorderThickness="0"</c> 即可（ZCMCL 补，上游 PclCard 固定 1px）。
+    /// </summary>
+    public Thickness BorderThickness
+    {
+        get => (Thickness)GetValue(BorderThicknessProperty);
+        set => SetValue(BorderThicknessProperty, value);
+    }
+
+    /// <summary>卡片描边颜色；为 null 时使用调色板 ColorBrushGray7。</summary>
+    public Brush? BorderBrush
+    {
+        get => (Brush?)GetValue(BorderBrushProperty);
+        set => SetValue(BorderBrushProperty, value);
+    }
+
     public string Title
     {
         get => (string)GetValue(TitleProperty);
@@ -262,6 +287,18 @@ public class PclCard : Grid
         var expanded = (bool)e.NewValue;
         c._arrow.RenderTransform = new RotateTransform(expanded ? 180 : 0);
         c._host.Visibility = expanded ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private static void OnBorderChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is PclCard c) c._border.BorderThickness = (Thickness)e.NewValue;
+    }
+
+    private static void OnBorderBrushChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is not PclCard c) return;
+        c._border.BorderBrush = e.NewValue as Brush
+            ?? Resolve<Brush>("ColorBrushGray7", Brushes.Gainsboro);
     }
 
     private static void OnCornerRadiusChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
