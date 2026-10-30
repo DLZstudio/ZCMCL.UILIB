@@ -17,6 +17,12 @@
         <Setter Property="BorderBrush" Value="{DynamicResource ColorBrush1}" />
         <Setter Property="Background" Value="{DynamicResource ColorBrushTransparent}" />
         <Setter Property="Padding" Value="14,8" />
+        <!--
+            模板里的边框宽度改为 TemplateBinding 后，必须在此给默认值：
+            Button.BorderThickness 的 WPF 默认是 0，不补这条会让所有 PlainButton 失去边框。
+            ZCMCL 补：值为 1，与原硬编码一致。
+        -->
+        <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -25,7 +31,14 @@
                         <Grid>
                             <Border x:Name="HoverBg" Background="{DynamicResource ColorBrushButtonHoverBg}"
                                     CornerRadius="5" Opacity="0" IsHitTestVisible="False" />
-                            <Border x:Name="PanFore" CornerRadius="5" BorderThickness="1"
+                            <!--
+                                ZCMCL 修复：BorderThickness 原本硬编码为 1，
+                                控件上设 BorderThickness="0" 完全无效
+                                （表现为「想做成无边框按钮，结果始终有 1px 框」）。
+                                改为 TemplateBinding，尊重控件自身设置。
+                            -->
+                            <Border x:Name="PanFore" CornerRadius="5"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
                                     BorderBrush="{TemplateBinding BorderBrush}"
                                     Background="{TemplateBinding Background}"
                                     Padding="{TemplateBinding Padding}"
