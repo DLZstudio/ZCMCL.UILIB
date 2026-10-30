@@ -139,10 +139,12 @@ public class ZcCard : Grid
     private const double ShadowHoverOpacity = 0.40;
 
     private readonly Border _border;
+    private readonly Border _hoverOverlay;
     private readonly ContentPresenter _host;
     private readonly ContentPresenter _headerSuffix;
     private readonly TextBlock _titleBlock;
     private readonly Path _arrow;
+    private bool _isHovered;
     private readonly DropShadowEffect _shadow;
     private readonly RowDefinitionCollection _innerRows;
 
@@ -162,11 +164,16 @@ public class ZcCard : Grid
         {
             CornerRadius = new CornerRadius(5),
             Effect = _shadow,
-            Background = Resolve<Brush>("ColorBrushTransparentBackground", Brushes.White),
-            BorderBrush = Resolve<Brush>("ColorBrushGray7", Brushes.Gainsboro),
             BorderThickness = new Thickness(1),
             SnapsToDevicePixels = true
         };
+
+        // 主题色必须用 DynamicResource 引用，不能在构造时 Resolve 取值。
+        // 早期实现用 Resolve(...) 一次性取色，导致主题切换后卡片仍是旧色
+        // （实测：切深色后卡片背景采样 (211,212,212) 接近纯白，文字几乎看不见）。
+        _border.SetResourceReference(Border.BackgroundProperty, "ColorBrushTransparentBackground");
+        _border.SetResourceReference(Border.BorderBrushProperty, "ColorBrushGray7");
+
         Children.Add(_border);
 
         // 内容网格：标题行(固定 38) + 内容(*)
@@ -174,7 +181,20 @@ public class ZcCard : Grid
         inner.RowDefinitions.Add(new RowDefinition { Height = new GridLength(TitleRowHeight) });
         inner.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         _innerRows = inner.RowDefinitions;
-        _border.Child = inner;
+
+        // 悬停时叠一层主题色微光（不拦截鼠标，不遮挡内容）
+        _hoverOverlay = new Border
+        {
+            CornerRadius = new CornerRadius(5),
+            Opacity = 0,
+            IsHitTestVisible = false,
+            Background = HoverOverlayBrush()
+        };
+
+        var layered = new Grid();
+        layered.Children.Add(inner);
+        layered.Children.Add(_hoverOverlay);
+        _border.Child = layered;
 
         // 标题
         _titleBlock = new TextBlock
@@ -184,9 +204,10 @@ public class ZcCard : Grid
             FontWeight = FontWeights.Bold,
             HorizontalAlignment = HorizontalAlignment.Left,
             VerticalAlignment = VerticalAlignment.Top,
-            IsHitTestVisible = false,
-            Foreground = Resolve<Brush>("ColorBrush1", Brushes.Black)
+            IsHitTestVisible = false
         };
+        // 文字色随主题走（悬停时会被临时改成主题主色，故用 SetResourceReference 而非静态赋值）
+        _titleBlock.SetResourceReference(TextBlock.ForegroundProperty, "ColorBrush1");
         Grid.SetRow(_titleBlock, 0);
         inner.Children.Add(_titleBlock);
 
@@ -214,12 +235,14 @@ public class ZcCard : Grid
             Margin = new Thickness(0, 17, 16, 0),
             RenderTransformOrigin = new Point(0.5, 0.5),
             RenderTransform = new RotateTransform(180),
-            Fill = Resolve<Brush>("ColorBrush1", Brushes.Black),
             Visibility = Visibility.Collapsed,
             IsHitTestVisible = false
         };
         Grid.SetRow(_arrow, 0);
         inner.Children.Add(_arrow);
+
+        // 箭头的填充色也要跟主题走（构造期不赋值，统一由 RefreshForeground 绑定）
+        RefreshForeground();
 
         // 内容宿主
         _host = new ContentPresenter
@@ -303,8 +326,17 @@ public class ZcCard : Grid
     private static void OnBorderBrushChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         if (d is not ZcCard c) return;
-        c._border.BorderBrush = e.NewValue as Brush
-            ?? Resolve<Brush>("ColorBrushGray7", Brushes.Gainsboro);
+
+        if (e.NewValue is Brush brush)
+        {
+            // 显式指定则用指定值
+            c._border.BorderBrush = brush;
+        }
+        else
+        {
+            // 回退到主题色：必须用资源引用，否则主题切换后会保留旧色
+            c._border.SetResourceReference(Border.BorderBrushProperty, "ColorBrushGray7");
+        }
     }
 
     private static void OnCornerRadiusChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -334,17 +366,74 @@ public class ZcCard : Grid
 
     private void OnMouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
     {
-        AnimateShadow(ShadowHoverOpacity, Resolve<Color>("ColorObject4", Colors.SteelBlue));
-        _titleBlock.Foreground = Resolve<Brush>("ColorBrush2", Brushes.SteelBlue);
-        if (IsCollapsible) _arrow.Fill = Resolve<Brush>("ColorBrush2", Brushes.SteelBlue);
+        _isHovered = true;
+
+        // 深色主题下 ColorObject1 是近白色（#dce4f0），拿它当阴影会变成「背景发光」，
+        // 悬停时反而把阴影换成较暗的 ColorObject4，看起来像什么都没发生。
+        // 统一改用 HoverVisual 的规则，两套主题方向都正确。
+        AnimateShadow(ShadowHoverOpacity, HoverVisual.HoverGlowColor);
+        ApplyHoverBackground(true);
+        RefreshForeground();
     }
 
     private void OnMouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
     {
-        AnimateShadow(ShadowIdleOpacity, Resolve<Color>("ColorObject1", Color.FromRgb(0x34, 0x3D, 0x4A)));
-        _titleBlock.Foreground = Resolve<Brush>("ColorBrush1", Brushes.Black);
-        if (IsCollapsible) _arrow.Fill = Resolve<Brush>("ColorBrush1", Brushes.Black);
+        _isHovered = false;
+
+        AnimateShadow(ShadowIdleOpacity, IdleShadowColor());
+        ApplyHoverBackground(false);
+        RefreshForeground();
     }
+
+    /// <summary>
+    /// 刷新标题/箭头颜色。
+    ///
+    /// 关键：必须用 SetResourceReference 重新绑定主题资源，而不是赋一个静态 Brush。
+    /// 早期实现直接 <c>_titleBlock.Foreground = Resolve("ColorBrush1")</c>，
+    /// 一次性取色导致主题切换后文字仍是旧色（深色主题下深字压深底，几乎看不见）。
+    /// </summary>
+    private void RefreshForeground()
+    {
+        // 悬停 → 主题主色；常态 → 主文字色。两者都通过资源引用，主题切换自动跟随。
+        var key = _isHovered ? "ColorBrush3" : "ColorBrush1";
+
+        _titleBlock.SetResourceReference(TextBlock.ForegroundProperty, key);
+        if (IsCollapsible) _arrow.SetResourceReference(Shape.FillProperty, key);
+    }
+
+    /// <summary>
+    /// 悬停时给背景叠一层主题色微光。
+    /// 只改阴影在深色主题下几乎看不出来（深底 + 深阴影），因此补一层背景变化，
+    /// 保证「鼠标移上去卡片一定会亮起来」——这是全工程卡片一致的交互语言。
+    /// </summary>
+    /// <summary>
+    /// 自检专用：强制进入/退出悬停视觉。
+    /// 自动化截图无法触发真实鼠标悬停（IsMouseOver 只读），
+    /// 这里执行与 OnMouseEnter/Leave 完全相同的逻辑，
+    /// 保证「截图所见 = 真实悬停所见」。正常代码不要调用。
+    /// </summary>
+    public void ForceHoverForTest(bool hover)
+    {
+        _isHovered = hover;
+        AnimateShadow(hover ? ShadowHoverOpacity : ShadowIdleOpacity,
+                      hover ? HoverVisual.HoverGlowColor : IdleShadowColor());
+        ApplyHoverBackground(hover);
+        RefreshForeground();
+    }
+
+    private void ApplyHoverBackground(bool hover)
+    {
+        if (_hoverOverlay is null) return;
+        _hoverOverlay.Opacity = hover ? 1 : 0;
+    }
+
+    /// <summary>
+    /// 常态阴影色（浅色近黑 / 深色纯黑）与悬停微光色，
+    /// 统一来自 <see cref="HoverVisual"/> —— 与列表项、工具页卡片共用一套规则。
+    /// </summary>
+    private static Color IdleShadowColor() => HoverVisual.IdleShadowColor;
+
+    private static Brush HoverOverlayBrush() => HoverVisual.HoverBackground();
 
     private void AnimateShadow(double opacity, Color color)
     {

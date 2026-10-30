@@ -33,8 +33,11 @@ public enum PclHintTheme
 /// 与上游差异：上游颜色随 ToneProfile 动态计算；本实现用固定语义色，
 /// 兼顾浅/深色主题时通过 <see cref="PclHintTheme"/> + 资源键回退。
 /// </summary>
-public class PclHint : Border
+public class PclHint : Border, WeakEventSubscriber.IThemeAware
 {
+    /// <summary>主题切换后重新取色（由 WeakEventSubscriber 调用）。</summary>
+    public void OnThemeChanged() => ApplyTheme();
+
     public static readonly DependencyProperty TextProperty =
         DependencyProperty.Register(nameof(Text), typeof(string), typeof(PclHint),
             new PropertyMetadata(string.Empty, OnTextChanged));
@@ -77,6 +80,10 @@ public class PclHint : Border
         Child = _text;
 
         ApplyTheme();
+
+        // 主题切换后重新取色（本控件的语义色是写死的，无法用 DynamicResource）。
+        // 弱引用订阅：控件被回收后不阻止 GC，也不给静态事件留下悬挂引用。
+        WeakEventSubscriber.Attach(this);
     }
 
     private static void OnTextChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -89,15 +96,31 @@ public class PclHint : Border
         if (d is PclHint h) h.ApplyTheme();
     }
 
+    /// <summary>
+    /// 按当前主题取色（浅色用浅底深字，深色用深底浅字）。
+    ///
+    /// 早期实现硬编码浅色值（如 #FFE8F1FD），在深色主题下会出现
+    /// 「浅色底 + 浅色字」的强反差点，整块提示条与深色页面格格不入。
+    /// 语义色（蓝/绿/黄/红）在两套主题下保持同一色相，只调整明度。
+    /// </summary>
     private void ApplyTheme()
     {
-        // 语义色：与 CE 的 HSL 生成结果观感一致（背景浅、边框与文字深）
-        (string bg, string fg) = Theme switch
+        var dark = HoverVisual.IsDarkTheme;
+
+        (string bg, string fg) = (Theme, dark) switch
         {
-            PclHintTheme.Info => ("#FFE8F1FD", "#FF1A6FD4"),
-            PclHintTheme.Success => ("#FFE9F7EE", "#FF1E7A45"),
-            PclHintTheme.Warning => ("#FFFDF6E3", "#FFA8791B"),
-            PclHintTheme.Error => ("#FFFDECEC", "#FFC0362C"),
+            // 浅色：浅底 + 深字
+            (PclHintTheme.Info, false) => ("#FFE8F1FD", "#FF1A6FD4"),
+            (PclHintTheme.Success, false) => ("#FFE9F7EE", "#FF1E7A45"),
+            (PclHintTheme.Warning, false) => ("#FFFDF6E3", "#FFA8791B"),
+            (PclHintTheme.Error, false) => ("#FFFDECEC", "#FFC0362C"),
+
+            // 深色：深底（降明度）+ 亮字（提明度），保持相同色相
+            (PclHintTheme.Info, true) => ("#FF1B2A3D", "#FF6BA3F5"),
+            (PclHintTheme.Success, true) => ("#FF16301F", "#FF5FBF84"),
+            (PclHintTheme.Warning, true) => ("#FF33290F", "#FFE0B050"),
+            (PclHintTheme.Error, true) => ("#FF361E1E", "#FFE87A72"),
+
             _ => ("#FFE8F1FD", "#FF1A6FD4")
         };
 

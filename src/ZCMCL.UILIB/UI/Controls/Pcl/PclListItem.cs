@@ -96,8 +96,11 @@ public class PclListItem : Grid
     private readonly SvgIcon.SvgIcon _glyph;
     private readonly TextBlock _label;
     private readonly ContentPresenter _right;
-    private readonly Brush _normalBrush;
-    private readonly Brush _accentBrush;
+    // 注意：这两个是「当前实际生效色」的缓存，仅用于 RefreshVisual 判断。
+    // 真正赋给控件时必须走 SetResourceReference（见 RefreshVisual），
+    // 否则主题切换后控件会保留旧色（深色主题下深字压深底，看不清）。
+    private Brush? _normalBrush;
+    private Brush? _accentBrush;
 
     public PclListItem()
     {
@@ -109,6 +112,7 @@ public class PclListItem : Grid
 
         _normalBrush = Resolve<Brush>("ColorBrush1", Brushes.Black);
         _accentBrush = Resolve<Brush>("ColorBrush3", Brushes.SteelBlue);
+        // 缓存仅用于判断，实际绑定时会重新解析
 
         ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });                 // 选中条
         ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(LogoColumnWidth) }); // 图标
@@ -138,7 +142,6 @@ public class PclListItem : Grid
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
             Stretch = Stretch.Uniform,
-            IconBrush = _normalBrush,
             Visibility = Visibility.Collapsed
         };
         Grid.SetColumn(_glyph, 1);
@@ -151,7 +154,6 @@ public class PclListItem : Grid
             FontSize = 13,
             VerticalAlignment = VerticalAlignment.Center,
             TextTrimming = TextTrimming.CharacterEllipsis,
-            Foreground = _normalBrush,
             IsHitTestVisible = false
         };
         Grid.SetColumn(_label, 2);
@@ -170,6 +172,10 @@ public class PclListItem : Grid
         MouseEnter += OnMouseEnter;
         MouseLeave += OnMouseLeave;
         MouseLeftButtonUp += OnMouseUp;
+
+        // 构造末尾完成一次颜色绑定：此前只在 IsSelected 变化时刷新，
+        // 初始状态下文字/图标没有颜色来源（继承父级，深色主题下可能不可见）。
+        RefreshVisual();
     }
 
     // ── 属性变化 ──────────────────────────────────────────────
@@ -219,8 +225,17 @@ public class PclListItem : Grid
     private void RefreshVisual()
     {
         var accent = IsSelected;
-        _label.Foreground = accent ? _accentBrush : _normalBrush;
-        _glyph.IconBrush = accent ? _accentBrush : _normalBrush;
+
+        // 用资源引用而不是静态 Brushes：主题切换时控件会自动跟随，
+        // 不会出现「深色主题下仍是深色文字」的问题。
+        _label.SetResourceReference(TextBlock.ForegroundProperty,
+            accent ? "ColorBrush3" : "ColorBrush1");
+        _glyph.SetResourceReference(SvgIcon.SvgIcon.IconBrushProperty,
+            accent ? "ColorBrush3" : "ColorBrush1");
+
+        // 同步缓存，供其它判断使用
+        _normalBrush = Resolve<Brush>("ColorBrush1", Brushes.Black);
+        _accentBrush = Resolve<Brush>("ColorBrush3", Brushes.SteelBlue);
 
         if (ShowIndicator)
         {
@@ -240,10 +255,22 @@ public class PclListItem : Grid
         }
     }
 
+    // ── 悬停视觉 ─────────────────────────────────────────────
+    //
+    // 统一走 HoverVisual（主题色 + 低透明度叠加），不再用 ColorBrushSemiTransparent
+    // —— 那个令牌在两套调色板里都是 1/255 不透明度，肉眼看不出，等于没有 hover。
+    // 与卡片、工具页共用同一套规则，保证「所有可点区域悬停都会亮」。
     private void OnMouseEnter(object sender, MouseEventArgs e)
-        => Background = Resolve<Brush>("ColorBrushSemiTransparent", Brushes.Transparent);
+    {
+        if (IsSelected) return;   // 选中态已有更强的视觉，不再叠 hover
+        Background = HoverVisual.HoverBackground();
+    }
 
-    private void OnMouseLeave(object sender, MouseEventArgs e) => Background = Brushes.Transparent;
+    private void OnMouseLeave(object sender, MouseEventArgs e)
+    {
+        if (IsSelected) return;
+        Background = Brushes.Transparent;
+    }
 
     private void OnMouseUp(object sender, MouseButtonEventArgs e)
     {
