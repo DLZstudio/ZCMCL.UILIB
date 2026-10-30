@@ -12,10 +12,10 @@ using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
 using System.Windows.Shapes;
 
-namespace ZCMCL.UILIB.UI.Controls.Pcl;
+namespace ZCMCL.UILIB.UI.Controls.Zc;
 
 /// <summary>
-/// PCL 风格的卡片容器：标题行 + 可选折叠 + 悬停阴影。
+/// PCL 风格的卡片容器：标题行 + 可选折叠 + 悬停阴影。**全工程统一用这个**。
 ///
 /// 规格取自 PCL2-CE 的 <c>MyCard</c>：
 ///   圆角 5；标题 Margin 15,12，FontSize 13，Bold；
@@ -23,49 +23,55 @@ namespace ZCMCL.UILIB.UI.Controls.Pcl;
 ///   内容区起点 y=38（标题行高度）；
 ///   阴影常态 opacity 0.07，悬停升到 0.4 并转为主题色。
 ///
+/// 合并说明：此前工程里有两套卡片 —— UILIB 的 <c>PclCard</c>（有标题/折叠/悬停阴影）
+/// 与 ZCMCL-UI 里的 <c>ZcCard</c> 样式（ContentControl + PlainCard，圆角 10、无悬停）。
+/// 两套并存导致「启动页卡片会变色、设置页卡片不会」，故合并为本控件：
+///   · 保留 PclCard 的全部能力（标题行、折叠、HeaderContent、悬停阴影、圆角可配）
+///   · 边框/圆角/背景均可配置，便于外观向原 ZcCard 靠拢（圆角默认仍 5，与 CE 一致）
+///
 /// 与上游实现的差异：这里用 <see cref="DropShadowEffect"/> + <see cref="ContentPresenter"/>
 /// 直接构建视觉树（控件自包含，引用程序集即可用，无需合并任何 ResourceDictionary），
 /// 不依赖上游的 MyDropShadow / BlurBorder / AnimatedBackgroundGrid。
 ///
-/// 注意：本类继承 <see cref="Grid"/>，XAML 里 <c>&lt;PclCard&gt;内容&lt;/PclCard&gt;</c>
+/// 注意：本类继承 <see cref="Grid"/>，XAML 里 <c>&lt;ZcCard&gt;内容&lt;/ZcCard&gt;</c>
 /// 会经由 <see cref="ContentPropertyAttribute"/> 落到 <see cref="Content"/> 属性，
 /// 而不是 <see cref="Panel.Children"/> —— 否则内容会盖在标题行上。
 /// </summary>
 [System.Windows.Markup.ContentProperty(nameof(Content))]
-public class PclCard : Grid
+public class ZcCard : Grid
 {
     // ── 依赖属性 ──────────────────────────────────────────────
 
     public static readonly DependencyProperty TitleProperty =
-        DependencyProperty.Register(nameof(Title), typeof(string), typeof(PclCard),
+        DependencyProperty.Register(nameof(Title), typeof(string), typeof(ZcCard),
             new PropertyMetadata(string.Empty, OnTitleChanged));
 
     public static readonly DependencyProperty IsCollapsibleProperty =
-        DependencyProperty.Register(nameof(IsCollapsible), typeof(bool), typeof(PclCard),
+        DependencyProperty.Register(nameof(IsCollapsible), typeof(bool), typeof(ZcCard),
             new PropertyMetadata(false, OnCollapsibleChanged));
 
     public static readonly DependencyProperty IsExpandedProperty =
-        DependencyProperty.Register(nameof(IsExpanded), typeof(bool), typeof(PclCard),
+        DependencyProperty.Register(nameof(IsExpanded), typeof(bool), typeof(ZcCard),
             new PropertyMetadata(true, OnExpandedChanged));
 
     public static readonly DependencyProperty CornerRadiusProperty =
-        DependencyProperty.Register(nameof(CornerRadius), typeof(CornerRadius), typeof(PclCard),
+        DependencyProperty.Register(nameof(CornerRadius), typeof(CornerRadius), typeof(ZcCard),
             new PropertyMetadata(new CornerRadius(5), OnCornerRadiusChanged));
 
     public static readonly DependencyProperty ContentProperty =
-        DependencyProperty.Register(nameof(Content), typeof(object), typeof(PclCard),
+        DependencyProperty.Register(nameof(Content), typeof(object), typeof(ZcCard),
             new PropertyMetadata(null, OnContentChanged));
 
     public static readonly DependencyProperty HeaderContentProperty =
-        DependencyProperty.Register(nameof(HeaderContent), typeof(object), typeof(PclCard),
+        DependencyProperty.Register(nameof(HeaderContent), typeof(object), typeof(ZcCard),
             new PropertyMetadata(null, OnHeaderContentChanged));
 
     public static readonly DependencyProperty BorderThicknessProperty =
-        DependencyProperty.Register(nameof(BorderThickness), typeof(Thickness), typeof(PclCard),
+        DependencyProperty.Register(nameof(BorderThickness), typeof(Thickness), typeof(ZcCard),
             new PropertyMetadata(new Thickness(1), OnBorderChanged));
 
     public static readonly DependencyProperty BorderBrushProperty =
-        DependencyProperty.Register(nameof(BorderBrush), typeof(Brush), typeof(PclCard),
+        DependencyProperty.Register(nameof(BorderBrush), typeof(Brush), typeof(ZcCard),
             new PropertyMetadata(null, OnBorderBrushChanged));
 
     /// <summary>
@@ -140,7 +146,7 @@ public class PclCard : Grid
     private readonly DropShadowEffect _shadow;
     private readonly RowDefinitionCollection _innerRows;
 
-    public PclCard()
+    public ZcCard()
     {
         // 阴影层（同时承担背景与圆角）
         _shadow = new DropShadowEffect
@@ -235,14 +241,14 @@ public class PclCard : Grid
 
     private static void OnTitleChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is not PclCard c) return;
+        if (d is not ZcCard c) return;
         c._titleBlock.Text = e.NewValue as string ?? string.Empty;
         c.RefreshTitleRow();
     }
 
     private static void OnHeaderContentChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is not PclCard c) return;
+        if (d is not ZcCard c) return;
         c._headerSuffix.Content = e.NewValue;
         c._headerSuffix.Visibility = e.NewValue is null ? Visibility.Collapsed : Visibility.Visible;
         c.RefreshTitleRow();
@@ -272,7 +278,7 @@ public class PclCard : Grid
 
     private static void OnCollapsibleChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is not PclCard c) return;
+        if (d is not ZcCard c) return;
         var on = (bool)e.NewValue;
         // 只有存在标题时才显示折叠箭头
         c._arrow.Visibility = on && !string.IsNullOrWhiteSpace(c._titleBlock.Text)
@@ -283,7 +289,7 @@ public class PclCard : Grid
 
     private static void OnExpandedChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is not PclCard c) return;
+        if (d is not ZcCard c) return;
         var expanded = (bool)e.NewValue;
         c._arrow.RenderTransform = new RotateTransform(expanded ? 180 : 0);
         c._host.Visibility = expanded ? Visibility.Visible : Visibility.Collapsed;
@@ -291,24 +297,24 @@ public class PclCard : Grid
 
     private static void OnBorderChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is PclCard c) c._border.BorderThickness = (Thickness)e.NewValue;
+        if (d is ZcCard c) c._border.BorderThickness = (Thickness)e.NewValue;
     }
 
     private static void OnBorderBrushChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is not PclCard c) return;
+        if (d is not ZcCard c) return;
         c._border.BorderBrush = e.NewValue as Brush
             ?? Resolve<Brush>("ColorBrushGray7", Brushes.Gainsboro);
     }
 
     private static void OnCornerRadiusChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is PclCard c) c._border.CornerRadius = (CornerRadius)e.NewValue;
+        if (d is ZcCard c) c._border.CornerRadius = (CornerRadius)e.NewValue;
     }
 
     private static void OnContentChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is not PclCard c) return;
+        if (d is not ZcCard c) return;
         c._host.Content = e.NewValue;
         // 有内容且处于展开态时显示内容区
         c._host.Visibility = c.IsExpanded ? Visibility.Visible : Visibility.Collapsed;
