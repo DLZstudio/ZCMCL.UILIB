@@ -247,4 +247,44 @@ public sealed partial class ThemeService
         var colors = _CalculateColors(CurrentTone, GetCurrentThemeArgs());
         foreach (var c in colors) c.Apply();
     }
+
+    // ==================== 独立入口（不依赖配置系统）====================
+    //
+    // 上面那套 RefreshColorMode / ApplyColorResources 依赖 PCL.Core 的
+    // Config.Preference / AnyConfigItem 源生成器。ZCMCL-UI 用的是自己的配置
+    // （内核 config.get/set），无法直接驱动它。
+    //
+    // 于是此前在 UI 侧另写了一套「切两套 Colors.xaml」的做法 —— 但那只切换了
+    // 静态调色板，控件的悬停/语义色仍要各自 if (IsDarkTheme) 猜一遍，
+    // 越加越多、无法收敛。
+    //
+    // 下面这组入口直接接受「明暗 + 色相」，复用同一套 ToneProfile → ColorBrush 生成链，
+    // 让 UI 侧真正用上这套模型：控件只认 ColorBrush*，永不判断明暗。
+
+    /// <summary>
+    /// 用指定色阶与强调色刷新全部配色资源。
+    /// </summary>
+    /// <param name="isDark">是否深色。</param>
+    /// <param name="hue">强调色色相（0–360）。</param>
+    /// <param name="lightAdjust">亮度微调（-1–1），可传 0。</param>
+    /// <param name="chromaAdjust">彩度微调（-1–1），可传 0。</param>
+    public static void ApplyTheme(bool isDark, int hue, double lightAdjust = 0, double chromaAdjust = 0)
+    {
+        var tone = isDark ? ToneProfileConfig.DefaultDark : ToneProfileConfig.DefaultLight;
+
+        // 灰度（ColorBrushGray*）先应用：它们是其它颜色的基底
+        var grays = _CalculateGrays(tone);
+        foreach (var g in grays) g.Apply();
+
+        // 彩色（ColorBrush1–8 / ColorBrushBg*）
+        var colors = _CalculateColors(tone, (hue, lightAdjust, chromaAdjust));
+        foreach (var c in colors) c.Apply();
+
+        // 记录状态，供只读查询（不做「猜主题」判断，仅用于日志/诊断）
+        IsDarkMode = isDark;
+    }
+
+    /// <summary>当前色阶（供需要色值的控件使用，不要在控件里自行判断明暗）。</summary>
+    public static ToneProfile CurrentToneProfile =>
+        IsDarkMode ? ToneProfileConfig.DefaultDark : ToneProfileConfig.DefaultLight;
 }
