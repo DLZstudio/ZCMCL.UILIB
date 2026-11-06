@@ -199,7 +199,6 @@ public sealed partial class ThemeService
         LabColor.FromLch(tone.LBackground, alpha:tone.ABackground).ToCatColor("TransparentBackground", false),
         LabColor.FromLch(tone.LBackground).ToCatColor("Background", false),
         LabColor.FromLch(tone.LBackground, alpha:tone.AToolTip).ToCatColor("ToolTip", false),
-        LabColor.FromLch(tone.L7, 0.25, 30, tone.AHalfTransparent).ToCatColor("RedBack", false),
         LabColor.FromLch(tone.LForeground).ToCatColor("Memory", false),
     ];
 

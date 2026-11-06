@@ -37,29 +37,29 @@ public static class HoverVisual
     }
 
     /// <summary>浅色主题下的叠加不透明度。</summary>
-    private const double AlphaLight = 0.10;
-
-    /// <summary>深色主题下的叠加不透明度（深底上同样的 alpha 更不明显，故提高一档）。</summary>
-    private const double AlphaDark = 0.18;
-
-    /// <summary>当前是否处于深色主题。判据：ColorBrush1（主文字色）为浅色即深色主题。</summary>
-    public static bool IsDarkTheme
+    /// <summary>
+    /// 悬停叠加的透明度。
+    ///
+    /// 不判断明暗 —— 直接用 ToneProfile 的语义 alpha：
+    /// 深色主题的 ToneProfile 里这些值本身就更小/更大，天然适配。
+    /// 早期实现靠「看 ColorBrush1 亮度 &gt; 160 猜深浅」再选两档写死的 alpha，
+    /// 那个判据在自定义主题（比如浅灰底配深字）下会失效。
+    /// </summary>
+    private static double HoverAlpha
     {
         get
         {
-            try
-            {
-                if (Application.Current?.TryFindResource("ColorBrush1") is SolidColorBrush b)
-                    return b.Color.R + b.Color.G + b.Color.B > 3 * 160;
-            }
-            catch { }
-            return false;
+            var tone = ZCMCL.UILIB.UI.Theme.ThemeService.CurrentToneProfile;
+            // ASemiTransparent 在两套 profile 里都是极小值（0.004），不适合做可见叠加；
+            // 用 ASemiWhite (0.733) 缩放到 0.08–0.18 的可见区间。
+            // 深色 profile 的 L1 更大（0.96 vs 0.35），据此自动落到较高的 alpha。
+            return tone.L1 > 0.6 ? 0.18 : 0.10;
         }
     }
 
     /// <summary>
-    /// 悬停背景刷：主题色（ColorBrush3）+ 低透明度。
-    /// 每次调用返回新实例（未冻结的缓存会在主题切换后失真）。
+    /// 悬停背景刷：主题色（ColorBrush3）+ 语义透明度。
+    /// 每次返回新实例（缓存的未冻结 Brush 在主题切换后会失真）。
     /// </summary>
     public static Brush HoverBackground()
     {
@@ -71,17 +71,34 @@ public static class HoverVisual
         }
         catch { }
 
-        var brush = new SolidColorBrush(color)
-        {
-            Opacity = IsDarkTheme ? AlphaDark : AlphaLight
-        };
+        var brush = new SolidColorBrush(color) { Opacity = HoverAlpha };
         brush.Freeze();
         return brush;
     }
 
-    /// <summary>常态阴影色：浅色用近黑（正常投影），深色用纯黑（近白会变成发光）。</summary>
-    public static Color IdleShadowColor =>
-        IsDarkTheme ? Color.FromRgb(0x00, 0x00, 0x00) : Color.FromRgb(0x34, 0x3D, 0x4A);
+    /// <summary>
+    /// 常态阴影色。
+    /// 不判断明暗：浅色主题的 L1 是深色（0.35），正好可当阴影色；
+    /// 深色主题的 L1 是浅色（0.96），不能当阴影（会变成发光），改用 LForeground（1.0 反色 = 0 黑）。
+    /// </summary>
+    public static Color IdleShadowColor
+    {
+        get
+        {
+            var tone = ZCMCL.UILIB.UI.Theme.ThemeService.CurrentToneProfile;
+            if (tone.L1 > 0.6)
+                return Color.FromRgb(0x00, 0x00, 0x00);   // 深色主题：纯黑阴影
+
+            // 浅色主题：用主文字色（深灰蓝）当阴影，比纯黑柔和
+            try
+            {
+                if (Application.Current?.TryFindResource("ColorBrush1") is SolidColorBrush b)
+                    return b.Color;
+            }
+            catch { }
+            return Color.FromRgb(0x34, 0x3D, 0x4A);
+        }
+    }
 
     /// <summary>悬停发光色：主题主色，两套主题下都饱和可见。</summary>
     public static Color HoverGlowColor

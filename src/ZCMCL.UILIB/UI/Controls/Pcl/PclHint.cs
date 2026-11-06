@@ -81,6 +81,10 @@ public class PclHint : Border, WeakEventSubscriber.IThemeAware
 
         ApplyTheme();
 
+        // 加载完成后再绑一次：构造发生在主题应用之前时（首次启动很常见），
+        // SetResourceReference 找不到键会静默不生效，必须等资源就绪重试。
+        Loaded += (_, _) => ApplyTheme();
+
         // 主题切换后重新取色（本控件的语义色是写死的，无法用 DynamicResource）。
         // 弱引用订阅：控件被回收后不阻止 GC，也不给静态事件留下悬挂引用。
         WeakEventSubscriber.Attach(this);
@@ -97,42 +101,35 @@ public class PclHint : Border, WeakEventSubscriber.IThemeAware
     }
 
     /// <summary>
-    /// 按当前主题取色（浅色用浅底深字，深色用深底浅字）。
+    /// 取色。
     ///
-    /// 早期实现硬编码浅色值（如 #FFE8F1FD），在深色主题下会出现
-    /// 「浅色底 + 浅色字」的强反差点，整块提示条与深色页面格格不入。
-    /// 语义色（蓝/绿/黄/红）在两套主题下保持同一色相，只调整明度。
+    /// 演进过程（都踩过坑，记录以免再犯）：
+    ///   1. 硬编码 8 组 hex（浅/深各 4 组）→ 主题一改就失效，且要维护两份
+    ///   2. 引用 ColorBrushXxxBack 资源键 → 生成时误用了 AHalfTransparent(0.5)，
+    ///      底色被白底稀释成 (245,236,200) 近乎白，提示条失去辨识度
+    ///   3. 现在：直接用 ToneProfile 的 L7/L2 + HSL(hue, 90%)，
+    ///      与 PCL2-CE 的 MyHint.UpdateUI() 一致，不透明、无需判明暗。
     /// </summary>
     private void ApplyTheme()
     {
-        var dark = HoverVisual.IsDarkTheme;
-
-        (string bg, string fg) = (Theme, dark) switch
+        var kind = Theme switch
         {
-            // 浅色：浅底 + 深字
-            (PclHintTheme.Info, false) => ("#FFE8F1FD", "#FF1A6FD4"),
-            (PclHintTheme.Success, false) => ("#FFE9F7EE", "#FF1E7A45"),
-            (PclHintTheme.Warning, false) => ("#FFFDF6E3", "#FFA8791B"),
-            (PclHintTheme.Error, false) => ("#FFFDECEC", "#FFC0362C"),
-
-            // 深色：深底（降明度）+ 亮字（提明度），保持相同色相
-            (PclHintTheme.Info, true) => ("#FF1B2A3D", "#FF6BA3F5"),
-            (PclHintTheme.Success, true) => ("#FF16301F", "#FF5FBF84"),
-            (PclHintTheme.Warning, true) => ("#FF33290F", "#FFE0B050"),
-            (PclHintTheme.Error, true) => ("#FF361E1E", "#FFE87A72"),
-
-            _ => ("#FFE8F1FD", "#FF1A6FD4")
+            PclHintTheme.Success => ZCMCL.UILIB.UI.Theme.SemanticColor.Kind.Success,
+            PclHintTheme.Warning => ZCMCL.UILIB.UI.Theme.SemanticColor.Kind.Warning,
+            PclHintTheme.Error => ZCMCL.UILIB.UI.Theme.SemanticColor.Kind.Error,
+            _ => ZCMCL.UILIB.UI.Theme.SemanticColor.Kind.Info
         };
 
-        Background = ParseBrush(bg);
-        BorderBrush = ParseBrush(fg);
-        _text.Foreground = ParseBrush(fg);
-    }
+        var bg = ZCMCL.UILIB.UI.Theme.SemanticColor.Background(kind);
+        var fg = ZCMCL.UILIB.UI.Theme.SemanticColor.Foreground(kind);
 
-    private static Brush ParseBrush(string hex)
-    {
-        var b = new SolidColorBrush((Color)ColorConverter.ConvertFromString(hex));
-        b.Freeze();
-        return b;
+        var bgBrush = new SolidColorBrush(bg);
+        bgBrush.Freeze();
+        var fgBrush = new SolidColorBrush(fg);
+        fgBrush.Freeze();
+
+        Background = bgBrush;
+        BorderBrush = fgBrush;
+        _text.Foreground = fgBrush;
     }
 }
